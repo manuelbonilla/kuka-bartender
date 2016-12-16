@@ -1,0 +1,9 @@
+<library path="lib/libbartender_control">
+
+  <class name="bartender_control/OneTaskInverseKinematics" type="bartender_control::OneTaskInverseKinematics" base_class_type="controller_interface::ControllerBase">
+    <description>
+      Info...
+    </description>
+  </class> 
+
+</library>

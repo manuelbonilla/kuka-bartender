@@ -1,0 +1,5 @@
+uint8 type
+string action
+int16 to_move
+---
+bool resp

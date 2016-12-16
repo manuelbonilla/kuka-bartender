@@ -1,0 +1,30 @@
+<package format="2">
+  <name>bartender_control</name>
+  <version>0.0.0</version>
+  <description>The bartender_control package</description>
+
+
+  <maintainer email="andrea@todo.todo">andrea</maintainer>
+
+  <license>TODO</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>lwr_hw</depend>
+  <depend>lwr_description</depend>
+  <depend>lwr_controllers</depend>
+  <depend>roscpp</depend>
+  <depend>std_msgs</depend>
+  <depend>controller_interface</depend> 
+<!--   <exec_depend>lwr_hw</exec_depend>
+  <exec_depend>lwr_description</exec_depend>
+  <exec_depend>lwr_controllers</exec_depend>
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>std_msgs</exec_depend>
+   -->
+  <depend>message_generation</depend>
+  <!-- The export tag contains other, unspecified, tags -->
+  <export>
+    <controller_interface plugin="${prefix}/bartender_control_plugins.xml"/>
+  </export>
+</package>

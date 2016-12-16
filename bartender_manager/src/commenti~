@@ -1,0 +1,85 @@
+#include "AnymalManager.h"
+
+void AnymalManager::buildBaseMvMap() {
+   
+   	//Inizializza le posizioni dei giunti dei robot
+}
+
+void AnymalManager::frameFromAngle(int angle_deg){
+    
+   	//dato un angolo in gradi, lo trasforma in radianti e ne fa la relativa rotazione
+}
+
+std::vector<anymal_control::anymal_msg> AnymalManager::buildType1action(std::string action, int id) {
+
+    	//data la stringa contenente il tipo di azione e l'ID (preso dal messaggio), restituisce l'azione da far fare al robot
+}
+
+std::vector<anymal_control::anymal_msg> AnymalManager::buildWalk(std::string action) {
+
+	//a seconda del tipo di azione scelta, comunica ai giunti quello che devono fare per compiere l'azione
+
+}
+
+std::vector<anymal_control::anymal_msg> AnymalManager::buildType8action(std::string action){
+    	
+    	//???
+}
+
+std::vector<anymal_control::anymal_msg> AnymalManager::buildRobotRot(int angle_deg){
+    
+    	//???
+}
+
+
+AnymalManager::AnymalManager() {
+
+    	//richiama la funzione che inizializza i giunti (buildBaseMvMap()) e crea i nodi publischer e subsriber per i comandi e per la posizione 		del tronco
+}
+
+AnymalManager::~AnymalManager() {}
+
+	//???
+
+bool AnymalManager::parseSrvAction(anymal_manager::AnymalManagerSrv::Request &req,
+                    anymal_manager::AnymalManagerSrv::Response &res) {
+    
+    	//aggiorna il file .srv
+}
+
+
+void AnymalManager::doAction(int action_type, std::string action, int to_move) {
+
+	//???
+
+}
+
+std::vector<float> AnymalManager::doFollow(float x, float y, bool init_trajectory){
+ 
+ 	//segue la traiettoria dati i punti
+}
+
+void AnymalManager::checkCallback(const std_msgs::Bool & check_msg) {
+    if (check_msg.data) n_rem_jobs_--;
+}
+
+void AnymalManager::TrunkCallback(const geometry_msgs::Pose & trunk_msg){
+
+    if (call_count_trunk_ == 0) {
+        call_count_trunk_++;
+    }
+    geometry_msgs::Quaternion quat = trunk_msg.orientation;
+    
+    double x, y, z;
+    x = (double) trunk_msg.position.x;
+    y = (double) trunk_msg.position.y;
+    z = (double) trunk_msg.position.z;
+
+    if(trunk_semaphore_){
+       x_= KDL::Frame(KDL::Rotation::Quaternion(quat.x, quat.y, quat.z, quat.w), KDL::Vector(x, y, z)); 
+       std::cout <<"x_ letta " << x_.p << std::endl;
+       trunk_semaphore_ = false;
+    }
+
+
+}

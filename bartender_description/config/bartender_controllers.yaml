@@ -1,0 +1,48 @@
+left_arm:
+  joint_state_controller:
+    type: joint_state_controller/JointStateController
+    publish_rate: 100  
+  joint_trajectory_controller:
+    type: position_controllers/JointTrajectoryController
+    joints: 
+      - left_arm_a1_joint
+      - left_arm_a2_joint
+      - left_arm_e1_joint
+      - left_arm_a3_joint
+      - left_arm_a4_joint
+      - left_arm_a5_joint
+      - left_arm_a6_joint
+  bartender_control:
+    type: bartender_control/OneTaskInverseKinematics
+    root_name: bartender_anchor
+    tip_name: left_arm_7_link
+
+
+# left_hand:
+#   joint_state_controller:
+#     type: joint_state_controller/JointStateController
+#     publish_rate: 100  
+#   joint_trajectory_controller:
+#     type: position_controllers/JointTrajectoryController
+#     joints: 
+#       - left_hand_synergy_joint
+
+right_arm:
+  joint_state_controller:
+    type: joint_state_controller/JointStateController
+    publish_rate: 100  
+  joint_trajectory_controller:
+    type: position_controllers/JointTrajectoryController
+    joints: 
+      - right_arm_a1_joint
+      - right_arm_a2_joint
+      - right_arm_e1_joint
+      - right_arm_a3_joint
+      - right_arm_a4_joint
+      - right_arm_a5_joint
+      - right_arm_a6_joint
+  bartender_control:
+    type: bartender_control/OneTaskInverseKinematics
+    root_name: bartender_anchor
+    tip_name: right_arm_7_link
+
