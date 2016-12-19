@@ -82,7 +82,7 @@
     
 
     <rosparam command="load" file="$(find bartender_description)/config/bartender_controllers.yaml"/>
-    <rosparam command="load" file="$(find vito_description)/config/hardware_interfaces.yaml"/>
+    <rosparam command="load" file="$(find bartender_description)/config/hardware_interfaces.yaml"/>
 
 <!-- LEFT ARM -->
     
