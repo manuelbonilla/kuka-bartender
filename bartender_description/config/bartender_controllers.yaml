@@ -16,6 +16,10 @@ left_arm:
     type: bartender_control/OneTaskInverseKinematics
     root_name: bartender_anchor
     tip_name: left_arm_7_link
+  joint_impedance_control:
+    type: lwr_controllers/JointImpedanceController
+    root_name: bartender_anchor
+    tip_name: left_arm_7_link
 
 
 # left_hand:
@@ -43,6 +47,10 @@ right_arm:
       - right_arm_a6_joint
   bartender_control:
     type: bartender_control/OneTaskInverseKinematics
+    root_name: bartender_anchor
+    tip_name: right_arm_7_link
+  joint_impedance_control:
+    type: lwr_controllers/JointImpedanceController
     root_name: bartender_anchor
     tip_name: right_arm_7_link
 

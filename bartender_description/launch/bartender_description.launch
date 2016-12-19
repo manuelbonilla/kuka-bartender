@@ -50,7 +50,7 @@
     </group>
 
     <!-- load hardware interface -->
-    <rosparam command="load" file="$(find vito_description)/config/hardware_interfaces.yaml"/>
+    <rosparam command="load" file="$(find bartender_description)/config/hardware_interfaces.yaml"/>
 
 
     <!-- SIMULATION AND PLANNING -->
@@ -62,7 +62,7 @@
 
         <!-- load Gazebo simulation environment -->
         <include file="$(find gazebo_ros)/launch/empty_world.launch">
-            <arg name="world_name" value="$(find vito_description)/worlds/simple_environment.world"/>
+            <arg name="world_name" value="$(find bartender_description)/worlds/simple_environment.world"/>
             <arg name="paused" value="false"/>
             <!-- when using the real/sim scenario in parallel, set "use_enabled_time" to false -->
             <arg name="use_sim_time" value="true"/>
@@ -101,7 +101,7 @@
             <!-- perhaps it is worth remapping joint states -->
         </group>
 
-        <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen"  args="joint_state_controller bartender_control"/>
+        <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen"  args="joint_state_controller joint_impedance_control"/>
     </group>
     
 <!-- LEFT HAND -->
@@ -134,7 +134,7 @@
             </include>
         </group>
 
-        <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen"  args="joint_state_controller bartender_control"/>
+        <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen"  args="joint_state_controller joint_impedance_control"/>
     </group>
 
 <!-- RIGHT HAND -->
