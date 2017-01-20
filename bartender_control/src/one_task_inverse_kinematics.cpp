@@ -141,15 +141,16 @@ namespace bartender_control
                     joint_des_states_.q(i) = joint_limits_.max(i);
             }
 
-            msg_err.data.push_back( x_err_.vel(0) );
-            msg_err.data.push_back( x_err_.vel(1) );
-            msg_err.data.push_back( x_err_.vel(2) );
+            std_msgs::Float64MultiArray msg_error;
+            msg_error.data.push_back( x_err_.vel(0) );
+            msg_error.data.push_back( x_err_.vel(1) );
+            msg_error.data.push_back( x_err_.vel(2) );
 
-            msg_err.data.push_back( x_err_.rot(0) );
-            msg_err.data.push_back( x_err_.rot(1) );
-            msg_err.data.push_back( x_err_.rot(2) );    
+            msg_error.data.push_back( x_err_.rot(0) );
+            msg_error.data.push_back( x_err_.rot(1) );
+            msg_error.data.push_back( x_err_.rot(2) );    
 
-            pub_check_error.publish(msg_err);
+            pub_check_error.publish(msg_error);
              
         }
 
