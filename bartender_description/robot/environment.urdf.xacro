@@ -4,9 +4,9 @@
        
   <!-- MODELS -->
   <xacro:include filename="$(find bartender_description)/model/table.urdf.xacro"/>
-  <xacro:include filename="$(find bartender_description)/model/materials.urdf"/>
+  <xacro:include filename="$(find vito_description)/model/materials.urdf"/>
   <xacro:include filename="$(find bartender_description)/model/bottle.xacro"/>
-
+<xacro:include filename="$(find bartender_description)/model/glass.xacro"/>
   <!-- WORKBENCH -->
   <link name="bartender_workbench_anchor"/>
   <xacro:model_table name="bartender_workbench" 

@@ -7,6 +7,7 @@
 #include <Eigen/LU>
 
 #include <math.h>
+#include "std_msgs/Bool.h"
 
 using namespace std;
 
@@ -22,6 +23,8 @@ namespace bartender_control
             ROS_ERROR("Couldn't initilize OneTaskInverseKinematics controller.");
             return false;
         }
+
+        cout << "debug: INIT function" << endl;
 
         jnt_to_jac_solver_.reset(new KDL::ChainJntToJacSolver(kdl_chain_));
         fk_pos_solver_.reset(new KDL::ChainFkSolverPos_recursive(kdl_chain_));
@@ -43,61 +46,51 @@ namespace bartender_control
         fk_pos_solver_->JntToCart(joint_msr_states_.q, x_);
         fk_pos_solver_->JntToCart(joint_msr_states_.q, x_des_);
 
-        //Desired posture is the current one
-        //bartender_control::bartender_msg msg;
-
-        /*x_des_ = KDL::Frame(KDL::Rotation::Quaternion(msg.des_frame.orientation.x, 
-                                                        msg.des_frame.orientation.y, 
-                                                        msg.des_frame.orientation.z, 
-                                                        msg.des_frame.orientation.w), 
-
-                                            KDL::Vector(msg.des_frame.position.x,
-                                                        msg.des_frame.position.y,
-                                                        msg.des_frame.position.z));*/
-
 
         cmd_flag_ = 0;
 
-        //sub_command_ = nh_.subscribe("command", 1, &OneTaskInverseKinematics::command, this);
-        //sub_bartender_cmd_ = nh_.subscribe("/bartender/des_position", 1, &OneTaskInverseKinematics::command, this);
-        sub_bartender_cmd_ = nh_.subscribe("/bartender/des_position", 1, &OneTaskInverseKinematics::command, this);
+        msg_err.data.resize(6);
+
+        //Definition of publishers and subscribes
+
+        pub_check_error = nh_.advertise<std_msgs::Float64MultiArray>("error", 250);
+
+        sub_bartender_cmd = nh_.subscribe("command", 250, &OneTaskInverseKinematics::command, this);
+        
 
         return true;
     }
 
     void OneTaskInverseKinematics::starting(const ros::Time& time)
     {
+    }
+
+    void OneTaskInverseKinematics::command(const bartender_control::bartender_msg::ConstPtr &msg)
+    {
+
+        //Reading of left message by manager
+        //ROS_INFO_STREAM("MESSAGE ARRIVED");   //funziona
+
+        x_des_.p = KDL::Vector(msg->des_frame.position.x, msg->des_frame.position.y, msg->des_frame.position.z);
+        x_des_.M = KDL::Rotation::Quaternion(msg->des_frame.orientation.x, msg->des_frame.orientation.y, msg->des_frame.orientation.z, msg->des_frame.orientation.w);
+        
+        cmd_flag_ = 1;
 
     }
 
     void OneTaskInverseKinematics::update(const ros::Time& time, const ros::Duration& period)
     {
-
-        bartender_control::bartender_msg msg;
-
-
-        x_des_ = KDL::Frame(KDL::Rotation::Quaternion(msg.des_frame.orientation.x, 
-                                                        msg.des_frame.orientation.y, 
-                                                        msg.des_frame.orientation.z, 
-                                                        msg.des_frame.orientation.w), 
-
-                                            KDL::Vector(msg.des_frame.position.x,
-                                                        msg.des_frame.position.y,
-                                                        msg.des_frame.position.z));
-
-        //x_des_ = KDL::Frame(KDL::Rotation::Quaternion(0.707, 0.707, 0, 0), KDL::Vector(2, 2, 2));
-
-        //cout << "x_des è: " << msg.des_frame;
-        //cout << "x_des_ è: " << x_des_;
-        
+        //cout << "debug: UPDATE function" << endl; //funziona
         // get joint positions
         for(int i=0; i < joint_handles_.size(); i++)
         {
             joint_msr_states_.q(i) = joint_handles_[i].getPosition();
+            
         }
 
         if (cmd_flag_)
         {
+            //cout << "debug: UPDATE function -> calcoli" << endl;  //funziona
             // computing Jacobian
             jnt_to_jac_solver_->JntToJac(joint_msr_states_.q, J_);
 
@@ -148,55 +141,50 @@ namespace bartender_control
                     joint_des_states_.q(i) = joint_limits_.max(i);
             }
 
-            if (Equal(x_, x_des_, 0.005))
-            {
-                ROS_INFO("On target");
-                cmd_flag_ = 0;
-            }
+            msg_err.data.push_back( x_err_.vel(0) );
+            msg_err.data.push_back( x_err_.vel(1) );
+            msg_err.data.push_back( x_err_.vel(2) );
+
+            msg_err.data.push_back( x_err_.rot(0) );
+            msg_err.data.push_back( x_err_.rot(1) );
+            msg_err.data.push_back( x_err_.rot(2) );    
+
+            pub_check_error.publish(msg_err);
+             
         }
+
+        // cout << " Right arm ARRIVED: "<< arrived_right << endl;
+        // cout << " Left arm ARRIVED: "<< arrived_left << endl;
 
         // set controls for joints
         for (int i = 0; i < joint_handles_.size(); i++)
         {
             joint_handles_[i].setCommand(joint_des_states_.q(i));
         }
-    }
 
-    void OneTaskInverseKinematics::command(const bartender_control::bartender_msg::ConstPtr &msg)
-    {
-        KDL::Frame frame_des_;
-
-        switch(msg->id)
-        {
-			// KDL::Rotation::RPY -> Gives back a rotation matrix specified with RPY convention: first rotate around X with roll, then around the old Y with pitch, then around old Z with yaw
-            // KDL::Vector(...) -> Constructs a vector out of the three values x, y and z.
-            case 0:
-            frame_des_ = KDL::Frame(
-                    KDL::Rotation::Quaternion(msg->des_frame.orientation.x,msg->des_frame.orientation.y,msg->des_frame.orientation.z,msg->des_frame.orientation.w),
-                    KDL::Vector(msg->des_frame.position.x,
-                                msg->des_frame.position.y,
-                                msg->des_frame.position.z));
-            break;
-
-            case 1: // position only
-            frame_des_ = KDL::Frame(
-                KDL::Vector(msg->des_frame.position.x,
-                            msg->des_frame.position.y,
-                            msg->des_frame.position.z));
-            break;
-
-            case 2: // orientation only
-            frame_des_ = KDL::Frame(KDL::Rotation::Quaternion(msg->des_frame.orientation.x,msg->des_frame.orientation.y,msg->des_frame.orientation.z,msg->des_frame.orientation.w));
-            break;
-
-            default:
-            ROS_INFO("Wrong message ID");
-            return;
-        }
-
-        x_des_ = frame_des_;
-        cmd_flag_ = 1;
-    }
+     }
 }
 
 PLUGINLIB_EXPORT_CLASS(bartender_control::OneTaskInverseKinematics, controller_interface::ControllerBase)
+
+// int main(int argc, char **argv)
+// {
+//     ros::init(argc, argv, "bartender_control");
+
+//     bartender_control::OneTaskInverseKinematics control;
+
+//     ros::Rate r(1000);
+
+//     ros::Time t;
+
+//     while (ros::ok() && !control.msg.data)
+//     {
+        
+//         control.update(t.now(), r.expectedCycleTime());
+
+//         ros::spinOnce();
+
+//     }
+    
+//     return 0;
+// }

@@ -4,18 +4,92 @@ using namespace std;
 
 BartenderManager::BartenderManager() 
 {
-    //sub_bartender_check_ = n_.subscribe("/bartender/cmd_check", 1, &BartenderManager::checkCallback, this);
+   
+    pub_bartender_cmd_right = n_.advertise<bartender_control::bartender_msg>("/right_arm/bartender_control/command", 250);
+    pub_bartender_cmd_left = n_.advertise<bartender_control::bartender_msg>("/left_arm/bartender_control/command", 250);
 
-    //pub_bartender_cmd_ = n_.advertise<bartender_control::bartender_msg>("/bartender/des_position", 10);
-    //anymal_bartender_srv_ = n_.advertiseService("/bartender/barteder_manager_srv", &BartenderManager::parseSrvAction, this);
-    pub_bartender_cmd_ = n_.advertise<bartender_control::bartender_msg>("/bartender/des_position", 10);
+    sub_bartender_err_right = n_.subscribe("/right_arm/bartender_control/error", 250, &BartenderManager::checkCallback_right, this);
+    sub_bartender_err_left = n_.subscribe("/left_arm/bartender_control/error", 250, &BartenderManager::checkCallback_left, this);
 
+    // x_err_compare is a pose with POSITION equal to 0 and ROTATION also. It is used to compare error to 0
+    
+    //x_err_compare = KDL::Frame(KDL::Rotation::Quaternion(1, 0, 0, 0), KDL::Vector(0,0,0));
+    x_err_compare.p(0) = 0;
+    x_err_compare.p(1) = 0;
+    x_err_compare.p(2) = 0;
+    x_err_compare = KDL::Frame(KDL::Rotation::Quaternion(1, 0, 0, 0), x_err_compare.p);
+
+    //x_err_right = KDL::Frame(KDL::Rotation::Quaternion(1, 0, 0, 0), KDL::Vector(0,0,0));
+    //x_err_left = KDL::Frame(KDL::Rotation::Quaternion(1, 0, 0, 0), KDL::Vector(0,0,0));
 }
+
 BartenderManager::~BartenderManager() {}
 
-void BartenderManager::EulerToQuaternion(float R, float P, float Y)
+void BartenderManager::checkCallback_right(const std_msgs::Float64MultiArray & msg_err) {
+    
+    x_err_right.p(0) = msg_err.data[0];
+    x_err_right.p(1) = msg_err.data[1];
+    x_err_right.p(2) = msg_err.data[2];
+
+    q_err_right = BartenderManager::EulerToQuaternion(msg_err.data[3], msg_err.data[4], msg_err.data[5]);
+
+    x_err_right = KDL::Frame(KDL::Rotation::Quaternion(q_err_right[0], q_err_right[1], q_err_right[2], q_err_right[3]), x_err_right.p);
+    
+    //cout << "ERRORE (POS) DX: " << x_err_right.p(0) << x_err_right.p(1) << x_err_right.p(2) << endl;
+}
+
+void BartenderManager::checkCallback_left(const std_msgs::Float64MultiArray & msg_err) {
+    
+    x_err_left.p(0) = msg_err.data[0];
+    x_err_left.p(1) = msg_err.data[1];
+    x_err_left.p(2) = msg_err.data[2];
+
+    q_err_left = BartenderManager::EulerToQuaternion(msg_err.data[3], msg_err.data[4], msg_err.data[5]);
+
+    x_err_left = KDL::Frame(KDL::Rotation::Quaternion(q_err_left[0], q_err_left[1], q_err_left[2], q_err_left[3]), x_err_left.p);
+
+    //cout << "ERRORE (POS) SX: " << x_err_left.p(0) << x_err_left.p(1) << x_err_left.p(2) << endl;
+}
+
+//This function initializes the bottle map (string,frame)
+void BartenderManager::Init ()
 {
-	double q[4];
+	/*msg_right.arrived = false;
+	msg_left.arrived = false;*/
+	//x_bottle = KDL::Frame(KDL::Rotation::RotX(0.0), KDL::Vector(0,0,0) );
+
+	x_bottle.p(0) = -0.8;
+	x_bottle.p(1) = 0.3;
+	x_bottle.p(2) = 0.2;
+
+	roll_bottle = 0;
+	pitch_bottle = -90;
+	yaw_bottle = 0;
+
+	q_bottle = BartenderManager::EulerToQuaternion(roll_bottle, pitch_bottle, yaw_bottle);
+
+	x_bottle = KDL::Frame(KDL::Rotation::Quaternion(q_bottle[0], q_bottle[1], q_bottle[2], q_bottle[3]), x_bottle.p);
+
+	bottle["vodka"] = x_bottle;
+
+	x_bottle.p(1) = 0;
+	bottle["gin"] = x_bottle;
+
+	x_bottle.p(1) = -0.3;
+	bottle["lemon"] = x_bottle;
+
+	x_bottle.p(0) = -0.6;
+	x_bottle.p(1) = 0;
+	x_bottle.p(2) = 0.1;
+	bottle["glass"] = x_bottle;
+
+}
+
+//Function who transforms Euler agles (RPY) in quaternion
+double *BartenderManager::EulerToQuaternion(float R, float P, float Y)
+{
+	
+	static double q_[4];
 	double t0 = std::cos((3.142 * Y/ 180)*0.5f);
 	double t1 = std::sin((3.142 * Y/ 180)*0.5f);
 	double t2 = std::cos((3.142 * R/ 180)*0.5f);
@@ -23,153 +97,90 @@ void BartenderManager::EulerToQuaternion(float R, float P, float Y)
 	double t4 = std::cos((3.142 * P/ 180)*0.5f);
 	double t5 = std::sin((3.142 * P/ 180)*0.5f);
 
-	q[0] = t0 * t2 * t4 + t1 * t3 * t5;
-	q[1] = t0 * t3 * t4 - t1 * t2 * t5;
-	q[2] = t0 * t2 * t5 + t1 * t3 * t4;
-	q[3] = t1 * t2 * t4 - t0 * t3 * t5;
+	q_[0] = t0 * t2 * t4 + t1 * t3 * t5;
+	q_[1] = t0 * t3 * t4 - t1 * t2 * t5;
+	q_[2] = t0 * t2 * t5 + t1 * t3 * t4;
+	q_[3] = t1 * t2 * t4 - t0 * t3 * t5;
+
+	return q_;
 
 }
 
-void BartenderManager::InsertCartPosEE ()
-{
-	
-	bartender_control::bartender_msg msg;
-	
-	//insert desired EE orientation in degrees
-	float des_Roll_EE, des_Pitch_EE, des_Yaw_EE;
+//Function who let the user insert 2 bottle and it creates 2 msg
+void BartenderManager::DrinkSelection ()
+{	
+	string choise1, choise2;
 
-	cout << "Please enter RPY desired orientation of End-Effector (in Degrees)" << endl;
-	cout << "Roll: ";
-	cin >> des_Roll_EE;
-	cout << endl  << "Pitch: ";
-	cin >> des_Pitch_EE;
-	cout << endl << "Yaw: ";
-	cin >> des_Yaw_EE;
-	cout << endl << "Your desired RPY orientation is: " << des_Roll_EE << "," << des_Pitch_EE << "," << des_Yaw_EE << endl;
-	
-	//From RPY to quaternion	
-	double q[4];
-	double t0 = std::cos((3.142 * des_Yaw_EE/ 180)*0.5f);
-	double t1 = std::sin((3.142 * des_Yaw_EE/ 180)*0.5f);
-	double t2 = std::cos((3.142 * des_Roll_EE/ 180)*0.5f);
-	double t3 = std::sin((3.142 * des_Roll_EE/ 180)*0.5f);
-	double t4 = std::cos((3.142 * des_Pitch_EE/ 180)*0.5f);
-	double t5 = std::sin((3.142 * des_Pitch_EE/ 180)*0.5f);
+  	cout << "Please, enter the first bottle (vodka, gin, lemon): " << endl;
+  	getline (cin, choise1);
 
-	q[0] = t0 * t2 * t4 + t1 * t3 * t5;
-	q[1] = t0 * t3 * t4 - t1 * t2 * t5;
-	q[2] = t0 * t2 * t5 + t1 * t3 * t4;
-	q[3] = t1 * t2 * t4 - t0 * t3 * t5;
-	
-	//insert desired EE position
-	cout << endl << "Please enter Cartesian desired position of End-Effector" << endl;
-	cout << "X: ";
-	cin >> x_des_.p(0);
-	cout << endl  << "Y: ";
-	cin >> x_des_.p(1);
-	cout << endl << "Z: ";
-	cin >> x_des_.p(2);
-	cout << endl << "Your desired cartesian position is: " << x_des_.p(0) << "," << x_des_.p(1) << "," << x_des_.p(2) << endl;
+  	cout << "Please, enter the second bottle (vodka, gin, lemon): " << endl;
+  	getline (cin, choise2);
 
-	//Intitialization of x_des_ with EE desired poition and a fized orientation (0,0,0)
-	x_des_ = KDL::Frame(KDL::Rotation::Quaternion(q[0], q[1], q[2], q[3]), x_des_.p);
+  	cout << "You have chosen " << choise1 << " and " << choise2 << endl;
 
-	//Put desired EE position in the control message
-    msg.des_frame.position.x = x_des_.p(0);
-    msg.des_frame.position.y = x_des_.p(1);
-    msg.des_frame.position.z = x_des_.p(2);
+  	for (auto bot : bottle){
+  		if(!choise1.compare(bot.first)){
+  			msg_right.des_frame.position.x = bot.second.p(0);
+		    msg_right.des_frame.position.y = bot.second.p(1);
+		    msg_right.des_frame.position.z = bot.second.p(2);
 
-    //Put desired EE orientation in the control message
-    msg.des_frame.orientation.x = q[0];
-    msg.des_frame.orientation.y = q[1];
-    msg.des_frame.orientation.z = q[2];
-    msg.des_frame.orientation.w = q[3];
-	
-	//debug
-	cout << endl << msg.des_frame.position << endl;
-	cout << endl << msg.des_frame.orientation << endl;
-	pub_bartender_cmd_.publish(msg);
-	//ros::spinOnce();
+		    //Put desired EE orientation in the control message
+		    msg_right.des_frame.orientation.x = q_bottle[0];
+		    msg_right.des_frame.orientation.y = q_bottle[1];
+		    msg_right.des_frame.orientation.z = q_bottle[2];
+		    msg_right.des_frame.orientation.w = q_bottle[3];
 
+		    msg_right.arrived = false;
+		 }
+  	}
+
+  	for (auto bot : bottle){
+  		if(!choise2.compare(bot.first)){
+  			msg_left.des_frame.position.x = bot.second.p(0);
+		    msg_left.des_frame.position.y = bot.second.p(1);
+		    msg_left.des_frame.position.z = bot.second.p(2);
+
+		    //Put desired EE orientation in the control message
+		    msg_left.des_frame.orientation.x = q_bottle[0];
+		    msg_left.des_frame.orientation.y = q_bottle[1];
+		    msg_left.des_frame.orientation.z = q_bottle[2];
+		    msg_left.des_frame.orientation.w = q_bottle[3];
+
+		    msg_left.arrived = false;
+  		}
+  	}
 
 }
 
-std::vector<float> BartenderManager::doFollow(float x, float y, float z, bool init_trajectory)
+void BartenderManager::Grasping()
 {
-    //std::vector<float> final_position(2);
-    //call_count_trunk_ = 0;
-    KDL::Frame x_des;
+	msg_right.arrived = false;
+	msg_right.des_frame.position.x = -0.6;
+	msg_right.des_frame.position.y = 0.1;
+	msg_right.des_frame.position.z = 0.2;
 
+	msg_left.arrived = false;
+	msg_left.des_frame.position.x = -0.6;
+	msg_left.des_frame.position.y = -0.1;
+	msg_left.des_frame.position.z = 0.2;
 
-    x_des = KDL::Frame(KDL::Rotation::Quaternion(0, 0, 0, 1), KDL::Vector(x, y, z));
-    /*while(call_count_trunk_ == 0){
-        ros::spinOnce();
-    }
+	cout << "I'm grasping everything" << endl;
 
-    call_count_trunk_ = 0;
+}
 
-    if(init_trajectory){
-        trunk_init_ = x_;
-        init_trajectory = false;
-    }*/
-    
-    /*x_des = trunk_init_ * x_des;
+void BartenderManager::Pouring()
+{
 
+}
 
-    std::cout <<"x_des" << x_des.p << std::endl;
-    std::cout << "x_" << x_.p << std::endl;
+//Function who pubblishes 2 msg
+void BartenderManager::Publish() 
+{
+	//cout << "debug: PUBLISH function" << endl;	//funziona
 
-
-    KDL::Frame trunk_des;
-    double relative_angle_rad;
-    int relative_angle_deg;
-    std::string action;
-    double distance;
-
-
-    while(!Equal(x_des.p,x_.p,0.05)){
-        trunk_des.p = x_des.p - x_.p;	//error between desired position and actual position
-        trunk_des.p = x_.M.Inverse() * trunk_des.p;	//Gives back inverse transformation of frame x_
-
-        distance = sqrt(pow(trunk_des.p(0),2) + pow(trunk_des.p(1),2));
-
-        relative_angle_rad = atan2(trunk_des.p(1), trunk_des.p(0));
-        relative_angle_deg = (int)(relative_angle_rad * 180/3.14); 
-
-
-        if(abs(relative_angle_deg) >= 2){
-            doAction(9,"walk_adj", relative_angle_deg);
-        }else if(distance > 0.05){
-            if(trunk_des.p(0) > 0){
-                action = "walk_fw";
-            }else if(trunk_des.p(0) < 0){
-                action = "walk_bw";
-            }else if(trunk_des.p(1) > 0){
-                action = "walk_lx";
-            }else{
-                action = "walk_rx";
-            }
-            doAction(8, action, 1);
-        }
-
-        trunk_semaphore_ = true;
-        while(call_count_trunk_ == 0){
-            ros::spinOnce();
-        }
-
-        call_count_trunk_ = 0;
-        std::cout <<"x_des" << x_des.p << std::endl;
-        std::cout << "x_" << x_.p << std::endl;
-
-    }
-
-    x_ = trunk_init_.Inverse() * x_;
-    std::cout << "final_position: " << x_.p(0) << " " << x_.p(1) << std::endl;
-
-    final_position[0] = x_.p(0);
-    final_position[1] = x_.p(1);*/
-
-    //return final_position;
+	pub_bartender_cmd_right.publish(msg_right);
+	pub_bartender_cmd_left.publish(msg_left);
 }
 
 int main(int argc, char **argv)
@@ -178,15 +189,25 @@ int main(int argc, char **argv)
 
 	BartenderManager manager;
 
-	manager.InsertCartPosEE();
+	manager.Init();
 
+	manager.DrinkSelection();
+
+	while (ros::ok())
+	{
+		/*if (Equal(manager.x_err_right, manager.x_err_compare, 0.05))
+        {
+                ROS_INFO("DX ARM On target");
+        }
+        if (Equal(manager.x_err_left, manager.x_err_compare, 0.05))
+        {
+                ROS_INFO("SX ARM On target");
+        }*/
+
+		manager.Publish();
+		ros::spinOnce();
 	
-	//manager.frameFromAngle(180);
-
-	//manager.doFollow(x_des_.p(0), x_des_.p(1), x_des_.p(2), true);
-
-	
-	ros::spinOnce();
+	}
 	
 	return 0;
 }

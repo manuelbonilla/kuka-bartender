@@ -8,34 +8,34 @@
 <xacro:property name="gr_to_Kg" value="0.001"/>
 
 <!-- not so negligible, otherwise simulation fails -->
-<xacro:property name="bottle_mass" value="${1000*gr_to_Kg}"/>
-<xacro:property name="bottle_inertia">
+<xacro:property name="glass_mass" value="${200*gr_to_Kg}"/>
+<xacro:property name="glass_inertia">
     	<origin xyz="0 0 0"/>
-    	<mass value="${bottle_mass}"/>
-    	<inertia ixx="${bottle_mass * 10 * mm2_to_m2}" ixy="0.0" ixz="0.0" iyy="${bottle_mass * 10 * mm2_to_m2}" iyz="0.0" izz="${bottle_mass * 10 * mm2_to_m2}"/>
+    	<mass value="${glass_mass}"/>
+    	<inertia ixx="${glass_mass * 10 * mm2_to_m2}" ixy="0.0" ixz="0.0" iyy="${glass_mass * 10 * mm2_to_m2}" iyz="0.0" izz="${glass_mass * 10 * mm2_to_m2}"/>
 </xacro:property>
 
-<xacro:macro name="model_bottle" params="parent name *origin **material">
+<xacro:macro name="model_glass" params="parent name *origin">
   	<joint name="${parent}_${name}_base_joint" type="fixed">
     		<insert_block name="origin"/>
    	 	<parent link="${parent}"/>
     		<child link="${name}_link"/>
   	</joint>
   	<link name="${name}_link">
-      <insert_block name="material"/>
     		<inertial>
-      			<insert_block name="bottle_inertia"/>
+      			<insert_block name="glass_inertia"/>
     		</inertial>
     		<visual>
 			<origin xyz="0 0 0" rpy="0 0 0"/>
 			<geometry>
-				<cylinder length="0.3" radius="0.05"/>
+				<cylinder length="0.15" radius="0.05"/>
 			</geometry>
+      <material name="Vito/Silver"/>
     		</visual>
 		<collision>
 			<origin xyz="0 0 0" rpy="0 0 0"/>
 			<geometry>
-				<cylinder length="0.3" radius="0.05"/>
+				<cylinder length="0.15" radius="0.05"/>
 			</geometry>
 		</collision>
   	</link>

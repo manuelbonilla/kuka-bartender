@@ -15,6 +15,11 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/thread/condition.hpp>
 #include <sstream>
+#include "std_msgs/Float64MultiArray.h"
+
+#include <ros/node_handle.h>
+#include <ros/ros.h>
+#include <time.h>
 
 namespace bartender_control
 {
@@ -29,13 +34,17 @@ namespace bartender_control
 		void update(const ros::Time& time, const ros::Duration& period);
 		void command(const bartender_control::bartender_msg::ConstPtr &msg);
 
-	private:
-		//ros::Subscriber sub_command_;
-		ros::Subscriber sub_gains_;
-		ros::Subscriber sub_bartender_cmd_;
+		//ros::Subscriber sub_bartender_pos;
+		ros::Subscriber sub_bartender_cmd;
+
+		ros::Publisher pub_check_error;
+
+		std_msgs::Float64MultiArray msg_err;
 
 		KDL::Frame x_;		//current pose
 		KDL::Frame x_des_;	//desired pose
+
+		//bool cmd_flag_;
 
 		KDL::Twist x_err_;	//error position
 

@@ -2,5 +2,6 @@
 <launch>
 
   <node name="bartender_manager" pkg="bartender_manager" type="bartender_manager" respawn="false" output="screen" ns="/bartender" />
+  <rosparam command="load" file="$(find bartender_description)/config/bottles.yaml"/>
 
 </launch>

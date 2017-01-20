@@ -8,6 +8,8 @@
 #include <ros/ros.h>
 #include <stdio.h>
 #include <iostream>
+#include <string>
+#include <vector>
 #include <math.h>
 #include <kdl/kdl.hpp>
 #include <kdl/frames.hpp>
@@ -17,7 +19,10 @@
 #include <vector>
 #include <bartender_control/bartender_msg.h> 
 #include <Eigen/LU>
-//#include "bartender_manager/BartenderManagerSrv.h"
+#include <XmlRpcValue.h>
+#include "std_msgs/Bool.h"
+#include "std_msgs/Float64MultiArray.h"
+
 
 class BartenderManager {
 
@@ -25,45 +30,49 @@ class BartenderManager {
 	    BartenderManager();
 	    ~BartenderManager();
 
-	    //void buildBaseMvMap();
-	    //void buildCompositeMvMap();
+	    void checkCallback_right(const std_msgs::Float64MultiArray &msg_err);
+	    void checkCallback_left(const std_msgs::Float64MultiArray &msg_err);
+		double *EulerToQuaternion(float R, float P, float Y);
+		void DrinkSelection();
+		void Publish();
+		void Init();
+		void Grasping();
+		void Pouring();
 
-		//void checkCallback(const std_msgs::Bool & check_msg);
-		//void TrunkCallback(const geometry_msgs::Pose & trunk_msg);
+		//bool BottleGrasping = false;
 
-		//bool parseSrvAction(anymal_manager::AnymalManagerSrv::Request &req, anymal_manager::AnymalManagerSrv::Response &res);
-		//void doAction(int action_type, std::string action, int to_move);
-		std::vector<float> doFollow(float x, float y, float z, bool init_trajectory);
-		//std::vector<anymal_control::anymal_msg> buildType1action(std::string action, int id);
-		//std::vector<anymal_control::anymal_msg> buildType8action(std::string action);
-		//std::vector<anymal_control::anymal_msg> buildRobotRot(int angle);
-		//std::vector<anymal_control::anymal_msg> buildWalk(std::string action);
-		void EulerToQuaternion(float R, float P, float Y);
-		//std::vector<anymal_control::anymal_msg> pending_jobs_;
-		void InsertCartPosEE();
-	
+		bartender_control::bartender_msg msg_right;
+		bartender_control::bartender_msg msg_left;
+
+		//bartender_control::bartender_msg msg_err;
+		KDL::Frame x_err_right;
+		KDL::Frame x_err_left;
+
+		KDL::Frame x_err_compare;
+		
 	private:
 		ros::NodeHandle n_;
-		ros::Subscriber	sub_bartender_check_;
-		//ros::Subscriber	sub_anymal_trunk_position_;
 
-		ros::Publisher pub_bartender_cmd_;
-		//ros::ServiceServer anymal_manager_srv_;
+		ros::Publisher pub_bartender_cmd_right;
+		ros::Publisher pub_bartender_cmd_left;
 
-		//std::map<std::string, geometry_msgs::Pose> available_base_mv_;
+		ros::Subscriber sub_bartender_err_right;
+		ros::Subscriber sub_bartender_err_left;
 
 		KDL::Frame x_;
-		KDL::Frame x_des_;
+
+		KDL::Frame x_bottle;
+
+		//KDL::Frame x_err_right;
+		//KDL::Frame x_err_left;
+
 		geometry_msgs::Pose pose_rot_;
 
-		//bool trunk_semaphore_;
-		//int n_rem_jobs_;
-		//int call_count_trunk_;
-		//int trunk_rot_angle_;
+		std::map<std::string,KDL::Frame > bottle;	//Positions array: the first fild is the name (STRING), second is the position (VECTOR) 
+
+		float roll_bottle, pitch_bottle, yaw_bottle;
+		double *q_bottle, *q_err_right, *q_err_left;
+
 	};
-
-
-
-
 
 #endif

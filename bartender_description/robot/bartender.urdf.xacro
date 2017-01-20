@@ -9,7 +9,8 @@
   <xacro:include filename="$(find lwr_description)/model/kuka_lwr.urdf.xacro"/>
   <xacro:include filename="$(find soft_hand_description)/model/soft_hand.urdf.xacro"/>
   <xacro:include filename="$(find bartender_description)/model/bottle.urdf.xacro"/>
-    
+  <xacro:include filename="$(find bartender_description)/model/glass.urdf.xacro"/>
+  
   <link name="bartender_anchor" />
    <link name="world"/>
 
@@ -40,15 +41,23 @@
   <!-- BOTTLES -->
   <xacro:model_bottle name="bottle_R" parent="bartender_anchor">			
     <origin xyz="-1.0 0 0.22" rpy="0 0 0"/>
+    <material name="Vito/Blue"/>
   </xacro:model_bottle>
   
   <xacro:model_bottle name="bottle_B" parent="bartender_anchor">
     <origin xyz="-1.0 0.3 0.22" rpy="0 0 0"/>
+    <material name="Vito/LightGrey"/>
   </xacro:model_bottle>
   
   <xacro:model_bottle name="bottle_O" parent="bartender_anchor">
     <origin xyz="-1.0 -0.3 0.22" rpy="0 0 0"/>
+    <material name="Vito/Orange"/>
   </xacro:model_bottle>
+  
+  <!-- GLASS -->
+  <xacro:model_glass name="glass_drink" parent="bartender_anchor">			
+    <origin xyz="-0.7 0 0.15" rpy="0 0 0"/>
+  </xacro:model_glass>
   
   <!-- TORSO -->
   <xacro:model_torso name="torso" parent="bartender_anchor">
@@ -61,9 +70,9 @@
   </xacro:kuka_lwr>
 
   <!-- LEFT SOFTHAND -->
-  <!-- xacro:soft_hand parent="left_arm_7_link" name="left_hand" left="true" withAdaptiveTransmission="true" useMimicTag="true">
+  <!-- <xacro:soft_hand parent="left_arm_7_link" name="left_hand" left="true" withAdaptiveTransmission="true" useMimicTag="true">
     <origin xyz="0 0 0" rpy="0 0 0"/>
-  </xacro:soft_hand -->
+  </xacro:soft_hand > -->
 
   <!-- RIGHT ARM -->
   <xacro:kuka_lwr name="right_arm" parent="bartender_anchor">
@@ -71,9 +80,9 @@
   </xacro:kuka_lwr>
 
   <!-- RIGHT SOFTHAND -->
-  <!-- xacro:soft_hand parent="right_arm_7_link" name="right_hand" left="false" withAdaptiveTransmission="true" useMimicTag="true">
+  <!-- <xacro:soft_hand parent="right_arm_7_link" name="right_hand" left="false" withAdaptiveTransmission="true" useMimicTag="true">
     <origin xyz="0 0 0" rpy="0 0 0"/>
-  </xacro:soft_hand -->
+  </xacro:soft_hand > -->
 
 
 </robot>
