@@ -50,7 +50,7 @@
     </group>
 
     <!-- load hardware interface -->
-    <rosparam command="load" file="$(find bartender_description)/config/hardware_interfaces.yaml"/>
+    <rosparam command="load" file="$(find vito_description)/config/hardware_interfaces.yaml"/>
 
 
     <!-- SIMULATION AND PLANNING -->
@@ -62,7 +62,7 @@
 
         <!-- load Gazebo simulation environment -->
         <include file="$(find gazebo_ros)/launch/empty_world.launch">
-            <arg name="world_name" value="$(find bartender_description)/worlds/simple_environment.world"/>
+            <arg name="world_name" value="$(find vito_description)/worlds/simple_environment.world"/>
             <arg name="paused" value="false"/>
             <!-- when using the real/sim scenario in parallel, set "use_enabled_time" to false -->
             <arg name="use_sim_time" value="true"/>
@@ -82,14 +82,14 @@
     
 
     <rosparam command="load" file="$(find bartender_description)/config/bartender_controllers.yaml"/>
-    <rosparam command="load" file="$(find bartender_description)/config/hardware_interfaces.yaml"/>
+    <!-- <rosparam command="load" file="$(find vito_description)/config/hardware_interfaces.yaml"/> -->
+    <!-- <rosparam command="load" file="$(find bartender_description)/config/bottles.yaml"/> -->
 
 <!-- LEFT ARM -->
     
     <group ns="left_arm">
         <group if="$(arg left_arm_enabled)">
             <!--add a copy of the robot description within the name space -->
-            
             <param name="robot_description" command="$(find xacro)/xacro.py $(find bartender_description)/robot/$(arg robot_name).urdf.xacro use_mimic_tag:=true"/>
 
             <rosparam command="load" file="$(find vito_description)/config/left_arm_names.yaml" />
@@ -107,7 +107,7 @@
     
 <!-- LEFT HAND -->
     
-<!--     <group ns="left_hand">
+	<!-- <group ns="left_hand">
         <group if="$(arg left_hand_enabled)">
             <param name="robot_description" command="$(find xacro)/xacro.py $(find bartender_description)/robot/$(arg robot_name).urdf.xacro use_mimic_tag:=true"/>
 
@@ -117,7 +117,8 @@
                 <arg name="use_deafult_joint_names" value="false"/>
                 <arg name="hand_id" value="1"/>
             </include>
-    </group>  -->
+        </group>
+    </group> -->
 
 <!-- RIGHT ARM -->
     
@@ -140,7 +141,7 @@
 
 <!-- RIGHT HAND -->
     
-<!--     <group ns="right_hand">
+     <!-- <group ns="right_hand">
         <group if="$(arg right_hand_enabled)">
             <param name="robot_description" command="$(find xacro)/xacro.py $(find bartender_description)/robot/$(arg robot_name).urdf.xacro use_mimic_tag:=true"/>
 
