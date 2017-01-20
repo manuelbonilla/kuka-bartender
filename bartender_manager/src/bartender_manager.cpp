@@ -11,20 +11,16 @@ BartenderManager::BartenderManager()
     sub_bartender_err_right = n_.subscribe("/right_arm/bartender_control/error", 250, &BartenderManager::checkCallback_right, this);
     sub_bartender_err_left = n_.subscribe("/left_arm/bartender_control/error", 250, &BartenderManager::checkCallback_left, this);
 
-    // x_err_compare is a pose with POSITION equal to 0 and ROTATION also. It is used to compare error to 0
-    
-    //x_err_compare = KDL::Frame(KDL::Rotation::Quaternion(1, 0, 0, 0), KDL::Vector(0,0,0));
     x_err_compare.p(0) = 0;
     x_err_compare.p(1) = 0;
     x_err_compare.p(2) = 0;
     x_err_compare = KDL::Frame(KDL::Rotation::Quaternion(1, 0, 0, 0), x_err_compare.p);
 
-    //x_err_right = KDL::Frame(KDL::Rotation::Quaternion(1, 0, 0, 0), KDL::Vector(0,0,0));
-    //x_err_left = KDL::Frame(KDL::Rotation::Quaternion(1, 0, 0, 0), KDL::Vector(0,0,0));
 }
 
 BartenderManager::~BartenderManager() {}
 
+//Function callback for right arm
 void BartenderManager::checkCallback_right(const std_msgs::Float64MultiArray & msg_err) {
     
     x_err_right.p(0) = msg_err.data[0];
@@ -35,9 +31,9 @@ void BartenderManager::checkCallback_right(const std_msgs::Float64MultiArray & m
 
     x_err_right = KDL::Frame(KDL::Rotation::Quaternion(q_err_right[0], q_err_right[1], q_err_right[2], q_err_right[3]), x_err_right.p);
     
-    //cout << "ERRORE (POS) DX: " << x_err_right.p(0) << x_err_right.p(1) << x_err_right.p(2) << endl;
 }
 
+//Function callback for left arm
 void BartenderManager::checkCallback_left(const std_msgs::Float64MultiArray & msg_err) {
     
     x_err_left.p(0) = msg_err.data[0];
@@ -48,15 +44,11 @@ void BartenderManager::checkCallback_left(const std_msgs::Float64MultiArray & ms
 
     x_err_left = KDL::Frame(KDL::Rotation::Quaternion(q_err_left[0], q_err_left[1], q_err_left[2], q_err_left[3]), x_err_left.p);
 
-    //cout << "ERRORE (POS) SX: " << x_err_left.p(0) << x_err_left.p(1) << x_err_left.p(2) << endl;
 }
 
 //This function initializes the bottle map (string,frame)
 void BartenderManager::Init ()
 {
-	/*msg_right.arrived = false;
-	msg_left.arrived = false;*/
-	//x_bottle = KDL::Frame(KDL::Rotation::RotX(0.0), KDL::Vector(0,0,0) );
 
 	x_bottle.p(0) = -0.8;
 	x_bottle.p(1) = 0.3;
@@ -195,14 +187,13 @@ int main(int argc, char **argv)
 
 	while (ros::ok())
 	{
-		/*if (Equal(manager.x_err_right, manager.x_err_compare, 0.05))
-        {
-                ROS_INFO("DX ARM On target");
+		
+        if (Equal(manager.x_err_right, manager.x_err_compare, 0.05) && Equal(manager.x_err_left, manager.x_err_compare, 0.05) && !manager.BottleGrasping)
+        {	
+        	ROS_INFO("Both arm on targets, no i'm going to grasping and pouring in the glass");
+        	manager.Grasping();
+        	manager.BottleGrasping = true;
         }
-        if (Equal(manager.x_err_left, manager.x_err_compare, 0.05))
-        {
-                ROS_INFO("SX ARM On target");
-        }*/
 
 		manager.Publish();
 		ros::spinOnce();

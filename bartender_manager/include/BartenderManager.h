@@ -39,12 +39,11 @@ class BartenderManager {
 		void Grasping();
 		void Pouring();
 
-		//bool BottleGrasping = false;
+		bool BottleGrasping = false;
 
 		bartender_control::bartender_msg msg_right;
 		bartender_control::bartender_msg msg_left;
 
-		//bartender_control::bartender_msg msg_err;
 		KDL::Frame x_err_right;
 		KDL::Frame x_err_left;
 
@@ -62,10 +61,7 @@ class BartenderManager {
 		KDL::Frame x_;
 
 		KDL::Frame x_bottle;
-
-		//KDL::Frame x_err_right;
-		//KDL::Frame x_err_left;
-
+		
 		geometry_msgs::Pose pose_rot_;
 
 		std::map<std::string,KDL::Frame > bottle;	//Positions array: the first fild is the name (STRING), second is the position (VECTOR) 

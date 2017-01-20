@@ -49,8 +49,6 @@ namespace bartender_control
 
         cmd_flag_ = 0;
 
-        msg_err.data.resize(6);
-
         //Definition of publishers and subscribes
 
         pub_check_error = nh_.advertise<std_msgs::Float64MultiArray>("error", 250);
@@ -154,9 +152,6 @@ namespace bartender_control
              
         }
 
-        // cout << " Right arm ARRIVED: "<< arrived_right << endl;
-        // cout << " Left arm ARRIVED: "<< arrived_left << endl;
-
         // set controls for joints
         for (int i = 0; i < joint_handles_.size(); i++)
         {
@@ -167,25 +162,3 @@ namespace bartender_control
 }
 
 PLUGINLIB_EXPORT_CLASS(bartender_control::OneTaskInverseKinematics, controller_interface::ControllerBase)
-
-// int main(int argc, char **argv)
-// {
-//     ros::init(argc, argv, "bartender_control");
-
-//     bartender_control::OneTaskInverseKinematics control;
-
-//     ros::Rate r(1000);
-
-//     ros::Time t;
-
-//     while (ros::ok() && !control.msg.data)
-//     {
-        
-//         control.update(t.now(), r.expectedCycleTime());
-
-//         ros::spinOnce();
-
-//     }
-    
-//     return 0;
-// }

@@ -34,17 +34,12 @@ namespace bartender_control
 		void update(const ros::Time& time, const ros::Duration& period);
 		void command(const bartender_control::bartender_msg::ConstPtr &msg);
 
-		//ros::Subscriber sub_bartender_pos;
 		ros::Subscriber sub_bartender_cmd;
 
 		ros::Publisher pub_check_error;
 
-		std_msgs::Float64MultiArray msg_err;
-
 		KDL::Frame x_;		//current pose
 		KDL::Frame x_des_;	//desired pose
-
-		//bool cmd_flag_;
 
 		KDL::Twist x_err_;	//error position
 
