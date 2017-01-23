@@ -11,11 +11,21 @@ BartenderManager::BartenderManager()
     sub_bartender_err_right = n_.subscribe("/right_arm/bartender_control/error", 250, &BartenderManager::checkCallback_right, this);
     sub_bartender_err_left = n_.subscribe("/left_arm/bartender_control/error", 250, &BartenderManager::checkCallback_left, this);
 
+    sub_bartender_init_right = n_.subscribe("/right_arm/bartender_control/initial_position", 250, &BartenderManager::checkCallback_right_initial, this);
+    sub_bartender_init_left = n_.subscribe("/left_arm/bartender_control/initial_position", 250, &BartenderManager::checkCallback_left_initial, this);
+
     x_err_compare.p(0) = 0;
     x_err_compare.p(1) = 0;
     x_err_compare.p(2) = 0;
     x_err_compare = KDL::Frame(KDL::Rotation::Quaternion(1, 0, 0, 0), x_err_compare.p);
 
+    /*x_err_right.p(0) = 1;
+    x_err_right.p(1) = 1;
+    x_err_right.p(2) = 1;
+
+    x_err_left.p(0) = 1;
+    x_err_left.p(1) = 1;
+    x_err_left.p(2) = 1;*/
 }
 
 BartenderManager::~BartenderManager() {}
@@ -44,6 +54,32 @@ void BartenderManager::checkCallback_left(const std_msgs::Float64MultiArray & ms
 
     x_err_left = KDL::Frame(KDL::Rotation::Quaternion(q_err_left[0], q_err_left[1], q_err_left[2], q_err_left[3]), x_err_left.p);
 
+}
+
+//Function callback for right arm initial position
+void BartenderManager::checkCallback_right_initial(const std_msgs::Float64MultiArray &msg_init) {
+    
+    x_right_initial.p(0) = msg_init.data[0];
+    x_right_initial.p(1) = msg_init.data[1];
+    x_right_initial.p(2) = msg_init.data[2];
+
+    q_init_right = BartenderManager::EulerToQuaternion(msg_init.data[3], msg_init.data[4], msg_init.data[5]);
+
+    x_right_initial = KDL::Frame(KDL::Rotation::Quaternion(q_init_right[0], q_init_right[1], q_init_right[2], q_init_right[3]), x_right_initial.p);
+    
+}
+
+//Function callback for left arm initial position
+void BartenderManager::checkCallback_left_initial(const std_msgs::Float64MultiArray &msg_init) {
+    
+    x_left_initial.p(0) = msg_init.data[0];
+    x_left_initial.p(1) = msg_init.data[1];
+    x_left_initial.p(2) = msg_init.data[2];
+
+    q_init_left = BartenderManager::EulerToQuaternion(msg_init.data[3], msg_init.data[4], msg_init.data[5]);
+
+    x_left_initial = KDL::Frame(KDL::Rotation::Quaternion(q_init_left[0], q_init_left[1], q_init_left[2], q_init_left[3]), x_left_initial.p);
+    
 }
 
 //This function initializes the bottle map (string,frame)
@@ -157,12 +193,32 @@ void BartenderManager::Grasping()
 	msg_left.des_frame.position.y = -0.1;
 	msg_left.des_frame.position.z = 0.2;
 
-	cout << "I'm grasping everything" << endl;
-
 }
 
 void BartenderManager::Pouring()
 {
+
+}
+
+void BartenderManager::InitialPosition()
+{
+	msg_right.des_frame.position.x = x_right_initial.p(0);
+	msg_right.des_frame.position.y = x_right_initial.p(1);
+	msg_right.des_frame.position.z = x_right_initial.p(2);
+
+	/*msg_right.des_frame.orientation.x = q_bottle[0];
+	msg_right.des_frame.orientation.y = q_bottle[1];
+	msg_right.des_frame.orientation.z = q_bottle[2];
+	msg_right.des_frame.orientation.w = q_bottle[3];*/
+
+	msg_left.des_frame.position.x = x_left_initial.p(0);
+	msg_left.des_frame.position.y = x_left_initial.p(1);
+	msg_left.des_frame.position.z = x_left_initial.p(2);
+
+	/*msg_left.des_frame.orientation.x = q_bottle[0];
+	msg_left.des_frame.orientation.y = q_bottle[1];
+	msg_left.des_frame.orientation.z = q_bottle[2];
+	msg_left.des_frame.orientation.w = q_bottle[3];*/
 
 }
 
@@ -173,6 +229,7 @@ void BartenderManager::Publish()
 
 	pub_bartender_cmd_right.publish(msg_right);
 	pub_bartender_cmd_left.publish(msg_left);
+	ros::spinOnce();
 }
 
 int main(int argc, char **argv)
@@ -183,22 +240,67 @@ int main(int argc, char **argv)
 
 	manager.Init();
 
-	manager.DrinkSelection();
-
 	while (ros::ok())
 	{
-		
-        if (Equal(manager.x_err_right, manager.x_err_compare, 0.05) && Equal(manager.x_err_left, manager.x_err_compare, 0.05) && !manager.BottleGrasping)
-        {	
-        	ROS_INFO("Both arm on targets, no i'm going to grasping and pouring in the glass");
-        	manager.Grasping();
-        	manager.BottleGrasping = true;
-        }
+		int action = 1;
+		manager.DrinkSelection();
+			
+		while (action !=4)
+		{	
+			switch (action)
+			{
+
+				case(1):
+					ROS_INFO("FIRST action");
+					//manager.Publish();
+					while (Equal(manager.x_err_right, manager.x_err_compare, 0.05) && Equal(manager.x_err_left, manager.x_err_compare, 0.05) && action == 1)
+	        		{	
+	        			manager.Grasping();
+			    		//manager.Publish();
+			    		manager.x_err_right.p(0) = 1;
+			    		action = 2;
+			    		ROS_INFO("Both arm on targets, no i'm going to grasping and pouring in the glass");
+			        }
+					break;
+
+				case(2):
+					ROS_INFO("SECOND action");
+					//manager.Grasping();
+					//manager.Publish();
+					while (Equal(manager.x_err_right, manager.x_err_compare, 0.05) && Equal(manager.x_err_left, manager.x_err_compare, 0.05) && action == 2)
+	        		{	
+			        	manager.InitialPosition();
+			    		//manager.Publish();
+			    		manager.x_err_right.p(0) = 1;
+			    		action = 3;
+			    		ROS_INFO("Now it's time to pouring!!! ");
+			        }
+					break;
+
+				case(3):
+					ROS_INFO("THIRD action");
+					//manager.InitialPosition();
+					//manager.Publish();
+					while (Equal(manager.x_err_right, manager.x_err_compare, 0.05) && Equal(manager.x_err_left, manager.x_err_compare, 0.05) && action == 3)
+	        		{	
+			        	//manager.InitialPosition();
+			    		//manager.Publish();
+			    		manager.x_err_right.p(0) = 1;
+			    		action = 4;
+			    		ROS_INFO("Good job guy, you've done!!!");
+			        }
+					break;
+
+				default:
+					action = 1;
+			}
 
 		manager.Publish();
-		ros::spinOnce();
-	
-	}
+		
+		}
+	 
+	 }
+		
 	
 	return 0;
 }

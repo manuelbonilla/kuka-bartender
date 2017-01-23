@@ -52,6 +52,7 @@ namespace bartender_control
         //Definition of publishers and subscribes
 
         pub_check_error = nh_.advertise<std_msgs::Float64MultiArray>("error", 250);
+        pub_check_initial = nh_.advertise<std_msgs::Float64MultiArray>("initial_position", 250);
 
         sub_bartender_cmd = nh_.subscribe("command", 250, &OneTaskInverseKinematics::command, this);
         
@@ -140,6 +141,7 @@ namespace bartender_control
             }
 
             std_msgs::Float64MultiArray msg_error;
+
             msg_error.data.push_back( x_err_.vel(0) );
             msg_error.data.push_back( x_err_.vel(1) );
             msg_error.data.push_back( x_err_.vel(2) );
@@ -150,6 +152,24 @@ namespace bartender_control
 
             pub_check_error.publish(msg_error);
              
+        }
+        else
+        {
+            fk_pos_solver_->JntToCart(joint_msr_states_.q, x_initial);
+            x_initial.M.GetRPY(Roll_x_init, Pitch_x_init, Yaw_x_init);
+            
+            std_msgs::Float64MultiArray msg_initial;
+
+            msg_initial.data.push_back( x_initial.p(0) );
+            msg_initial.data.push_back( x_initial.p(1) );
+            msg_initial.data.push_back( x_initial.p(2) );
+
+            msg_initial.data.push_back( Roll_x_init );
+            msg_initial.data.push_back( Pitch_x_init );
+            msg_initial.data.push_back( Yaw_x_init ); 
+
+            pub_check_initial.publish(msg_initial);   
+
         }
 
         // set controls for joints

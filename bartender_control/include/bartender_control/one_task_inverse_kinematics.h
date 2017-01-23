@@ -37,8 +37,10 @@ namespace bartender_control
 		ros::Subscriber sub_bartender_cmd;
 
 		ros::Publisher pub_check_error;
+		ros::Publisher pub_check_initial;
 
 		KDL::Frame x_;		//current pose
+		KDL::Frame x_initial;		//current pose
 		KDL::Frame x_des_;	//desired pose
 
 		KDL::Twist x_err_;	//error position
@@ -55,6 +57,8 @@ namespace bartender_control
 			KDL::Vector v;
 			double a;
 		} quat_curr_, quat_des_;
+
+		double Roll_x_init, Pitch_x_init, Yaw_x_init;
 
 		KDL::Vector v_temp_;
 		
