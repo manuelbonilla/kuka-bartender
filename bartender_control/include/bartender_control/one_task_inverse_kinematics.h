@@ -21,6 +21,9 @@
 #include <ros/ros.h>
 #include <time.h>
 
+#include <utils/pseudo_inversion.h>
+#include <utils/skew_symmetric.h>
+
 namespace bartender_control
 {
 	class OneTaskInverseKinematics: public controller_interface::KinematicChainControllerBase<hardware_interface::PositionJointInterface>
@@ -33,6 +36,7 @@ namespace bartender_control
 		void starting(const ros::Time& time);
 		void update(const ros::Time& time, const ros::Duration& period);
 		void command(const bartender_control::bartender_msg::ConstPtr &msg);
+		Eigen::Matrix<double, 7, 1> potentialEnergy(KDL::JntArray q);
 
 		ros::Subscriber sub_bartender_cmd;
 
@@ -58,10 +62,21 @@ namespace bartender_control
 			double a;
 		} quat_curr_, quat_des_;
 
+		struct parameters
+		{
+			double gain_null_space;
+			/*std::vector<std::string> pf_list_of_links;
+			std::vector<KDL::Chain> pf_list_of_chains;
+			std::vector<KDL::ChainFkSolverPos_recursive> pf_list_of_fk;
+			std::vector<KDL::ChainJntToJacSolver> pf_list_of_jac;*/
+			bool enable_null_space;
+			int id_arm;
+		} parameters_;
+
 		double Roll_x_init, Pitch_x_init, Yaw_x_init;
 
 		KDL::Vector v_temp_;
-		
+
 		int cmd_flag_;
 		
 		boost::scoped_ptr<KDL::ChainJntToJacSolver> jnt_to_jac_solver_;		// Class to calculate the jacobian of a general KDL::Chain, it is used by other solvers. It should not be used outside of KDL.

@@ -3,7 +3,7 @@
     <!-- LAUNCH INTERFACE -->
     <arg name="gui" default="false" />
     <arg name="robot_name" default="bartender"/>
-    <arg name="use_rviz" default="true"/>
+    <arg name="use_rviz" default="false"/>
     <arg name="use_joint_state_publisher" default="true"/>
     <arg name="use_calibration_package" default="false"/>	<!-- disabled: simulation is not compromised -->
     <arg name="use_grasp_estimator" default="true"/>		

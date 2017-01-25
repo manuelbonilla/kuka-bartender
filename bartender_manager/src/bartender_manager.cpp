@@ -19,13 +19,6 @@ BartenderManager::BartenderManager()
     x_err_compare.p(2) = 0;
     x_err_compare = KDL::Frame(KDL::Rotation::Quaternion(1, 0, 0, 0), x_err_compare.p);
 
-    /*x_err_right.p(0) = 1;
-    x_err_right.p(1) = 1;
-    x_err_right.p(2) = 1;
-
-    x_err_left.p(0) = 1;
-    x_err_left.p(1) = 1;
-    x_err_left.p(2) = 1;*/
 }
 
 BartenderManager::~BartenderManager() {}

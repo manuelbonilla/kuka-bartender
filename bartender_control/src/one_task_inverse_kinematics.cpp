@@ -30,9 +30,11 @@ namespace bartender_control
         fk_pos_solver_.reset(new KDL::ChainFkSolverPos_recursive(kdl_chain_));
         ik_vel_solver_.reset(new KDL::ChainIkSolverVel_pinv(kdl_chain_));
         ik_pos_solver_.reset(new KDL::ChainIkSolverPos_NR_JL(kdl_chain_,joint_limits_.min,joint_limits_.max,*fk_pos_solver_,*ik_vel_solver_));
-
+    
         q_cmd_.resize(kdl_chain_.getNrOfJoints());
+
         J_.resize(kdl_chain_.getNrOfJoints());
+
 
         // get joint positions
         for(int i=0; i < joint_handles_.size(); i++)
@@ -55,7 +57,9 @@ namespace bartender_control
         pub_check_initial = nh_.advertise<std_msgs::Float64MultiArray>("initial_position", 250);
 
         sub_bartender_cmd = nh_.subscribe("command", 250, &OneTaskInverseKinematics::command, this);
-        
+
+        nh_.param<bool>("enable_null_space", parameters_.enable_null_space , true);
+        ROS_INFO_STREAM("Null Space: " << (parameters_.enable_null_space ? "Enabled" : "Disabled") );
 
         return true;
     }
@@ -81,15 +85,18 @@ namespace bartender_control
     {
         //cout << "debug: UPDATE function" << endl; //funziona
         // get joint positions
+
         for(int i=0; i < joint_handles_.size(); i++)
         {
             joint_msr_states_.q(i) = joint_handles_[i].getPosition();
+            joint_msr_states_.qdot(i) = joint_handles_[i].getVelocity();
             
         }
 
         if (cmd_flag_)
         {
             //cout << "debug: UPDATE function -> calcoli" << endl;  //funziona
+
             // computing Jacobian
             jnt_to_jac_solver_->JntToJac(joint_msr_states_.q, J_);
 
@@ -140,6 +147,12 @@ namespace bartender_control
                     joint_des_states_.q(i) = joint_limits_.max(i);
             }
 
+            //  New part: 
+            if (parameters_.enable_null_space)
+            {
+                //tau_.data += N_trans_ * potentialEnergy( joint_msr_states_.q )(i);
+            }
+
             std_msgs::Float64MultiArray msg_error;
 
             msg_error.data.push_back( x_err_.vel(0) );
@@ -155,6 +168,8 @@ namespace bartender_control
         }
         else
         {
+            cmd_flag_ = 0;
+
             fk_pos_solver_->JntToCart(joint_msr_states_.q, x_initial);
             x_initial.M.GetRPY(Roll_x_init, Pitch_x_init, Yaw_x_init);
             
@@ -178,7 +193,33 @@ namespace bartender_control
             joint_handles_[i].setCommand(joint_des_states_.q(i));
         }
 
+        /*cout << "G_local_Link_1 = " << G_local.data(0) << endl;
+        cout << "G_local_Link_2 = " << G_local.data(1) << endl;
+        cout << "G_local_Link_3 = " << G_local.data(2) << endl;
+        cout << "G_local_Link_4 = " << G_local.data(3) << endl;
+        cout << "G_local_Link_5 = " << G_local.data(4) << endl;
+        cout << "G_local_Link_6 = " << G_local.data(5) << endl;
+        cout << "G_local_Link_7 = " << G_local.data(6) << endl;*/
+        // cout << "G_local_Link_7 = " << parameters_.gain_null_space * G_local.data << endl;
      }
+
+    Eigen::Matrix<double, 7, 1> OneTaskInverseKinematics::potentialEnergy(KDL::JntArray q)
+    {
+        ROS_INFO("GRAVITY CALCULATION function");
+        KDL::JntArray G_local(7);
+        //id_solver_->JntToGravity(joint_msr_states_.q, G_local);
+
+        /*cout << "G_local_Link_1 = " << G_local.data[0] << endl;
+        cout << "G_local_Link_2 = " << G_local.data[1] << endl;
+        cout << "G_local_Link_3 = " << G_local.data[2] << endl;
+        cout << "G_local_Link_4 = " << G_local.data[3] << endl;
+        cout << "G_local_Link_5 = " << G_local.data[4] << endl;
+        cout << "G_local_Link_6 = " << G_local.data[5] << endl;
+        cout << "G_local_Link_7 = " << G_local.data[6] << endl;
+*/
+        return parameters_.gain_null_space * G_local.data ;
+
+    }
 }
 
 PLUGINLIB_EXPORT_CLASS(bartender_control::OneTaskInverseKinematics, controller_interface::ControllerBase)
