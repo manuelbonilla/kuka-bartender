@@ -8,17 +8,27 @@ BartenderManager::BartenderManager()
     pub_bartender_cmd_right = n_.advertise<bartender_control::bartender_msg>("/right_arm/bartender_control/command", 250);
     pub_bartender_cmd_left = n_.advertise<bartender_control::bartender_msg>("/left_arm/bartender_control/command", 250);
 
+    joint_pub = n_.advertise<sensor_msgs::JointState>("/left_hand/joint_states", 1);
+
     sub_bartender_err_right = n_.subscribe("/right_arm/bartender_control/error", 250, &BartenderManager::checkCallback_right, this);
     sub_bartender_err_left = n_.subscribe("/left_arm/bartender_control/error", 250, &BartenderManager::checkCallback_left, this);
 
     sub_bartender_init_right = n_.subscribe("/right_arm/bartender_control/initial_position", 250, &BartenderManager::checkCallback_right_initial, this);
     sub_bartender_init_left = n_.subscribe("/left_arm/bartender_control/initial_position", 250, &BartenderManager::checkCallback_left_initial, this);
 
+    //	creation of the error compare frame (0 in position error and 0 in rotation error)
     x_err_compare.p(0) = 0;
     x_err_compare.p(1) = 0;
     x_err_compare.p(2) = 0;
     x_err_compare = KDL::Frame(KDL::Rotation::Quaternion(1, 0, 0, 0), x_err_compare.p);
 
+    n_.param<double>("threshold", threshold, 0.1);
+
+
+	n_.param<float>("roll_b", roll_b, 0);
+    n_.param<float>("pitch_b", pitch_b, -90);
+    n_.param<float>("yaw_b", yaw_b, 0);
+    
 }
 
 BartenderManager::~BartenderManager() {}
@@ -78,14 +88,13 @@ void BartenderManager::checkCallback_left_initial(const std_msgs::Float64MultiAr
 //This function initializes the bottle map (string,frame)
 void BartenderManager::Init ()
 {
-
 	x_bottle.p(0) = -0.8;
 	x_bottle.p(1) = 0.3;
 	x_bottle.p(2) = 0.2;
 
-	roll_bottle = 0;
-	pitch_bottle = -90;
-	yaw_bottle = 0;
+	roll_bottle = roll_b;
+	pitch_bottle = pitch_b;
+	yaw_bottle = yaw_b;
 
 	q_bottle = BartenderManager::EulerToQuaternion(roll_bottle, pitch_bottle, yaw_bottle);
 
@@ -174,7 +183,31 @@ void BartenderManager::DrinkSelection ()
 
 }
 
-void BartenderManager::Grasping()
+void BartenderManager::Grasping(std::vector<int> closure_value, std::string s)
+{
+	ROS_INFO("Grasping funtion!!");
+	sensor_msgs::JointState joint_state;
+
+	joint_state.header.stamp = ros::Time::now();	
+
+	if(s == "left")
+	{
+		joint_state.name.push_back("left_hand_synergy_joint");
+		joint_state.position.push_back(closure_value[0]);
+	}
+
+	if(s == "right")
+	{
+		joint_state.name.push_back("right_hand_synergy_joint");
+		joint_state.position.push_back(closure_value[1]);
+	}
+	
+ 	joint_pub.publish(joint_state);
+	ros::spinOnce();
+
+}
+
+void BartenderManager::ToGlass()
 {
 	msg_right.arrived = false;
 	msg_right.des_frame.position.x = -0.6;
@@ -185,7 +218,6 @@ void BartenderManager::Grasping()
 	msg_left.des_frame.position.x = -0.6;
 	msg_left.des_frame.position.y = -0.1;
 	msg_left.des_frame.position.z = 0.2;
-
 }
 
 void BartenderManager::Pouring()
@@ -218,7 +250,6 @@ void BartenderManager::InitialPosition()
 //Function who pubblishes 2 msg
 void BartenderManager::Publish() 
 {
-	//cout << "debug: PUBLISH function" << endl;	//funziona
 
 	pub_bartender_cmd_right.publish(msg_right);
 	pub_bartender_cmd_left.publish(msg_left);
@@ -231,56 +262,92 @@ int main(int argc, char **argv)
 
 	BartenderManager manager;
 
+	std::vector<int> closure_value; 
+	closure_value.resize(2);
+	
+	closure_value[0] = 1;
+	closure_value[1] = 1;
+
+	std::string s_l, s_r;
+	s_l = "left";
+	s_r = "right";
+
 	manager.Init();
+
+	//manager.DrinkSelection();
 
 	while (ros::ok())
 	{
 		int action = 1;
 		manager.DrinkSelection();
-			
-		while (action !=4)
+
+		while (action !=5)
 		{	
+			manager.n_.param<double>("threshold", manager.threshold, 0.1);
+
+			manager.n_.param<float>("roll", manager.roll_b, 0);
+		    manager.n_.param<float>("pitch", manager.pitch_b, -90);
+		    manager.n_.param<float>("yaw", manager.yaw_b, 0);
+		    manager.Init();
+
 			switch (action)
 			{
 
 				case(1):
 					ROS_INFO("FIRST action");
-					//manager.Publish();
-					while (Equal(manager.x_err_right, manager.x_err_compare, 0.05) && Equal(manager.x_err_left, manager.x_err_compare, 0.05) && action == 1)
+					while (Equal(manager.x_err_right, manager.x_err_compare, manager.threshold) && Equal(manager.x_err_left, manager.x_err_compare, manager.threshold) && action == 1)
 	        		{	
-	        			manager.Grasping();
-			    		//manager.Publish();
+	        			manager.Grasping(closure_value, s_l);
+	        			manager.Grasping(closure_value, s_r);
+
 			    		manager.x_err_right.p(0) = 1;
 			    		action = 2;
 			    		ROS_INFO("Both arm on targets, no i'm going to grasping and pouring in the glass");
+
+	        			ros::Duration(1).sleep();					
 			        }
 					break;
 
 				case(2):
 					ROS_INFO("SECOND action");
-					//manager.Grasping();
-					//manager.Publish();
-					while (Equal(manager.x_err_right, manager.x_err_compare, 0.05) && Equal(manager.x_err_left, manager.x_err_compare, 0.05) && action == 2)
+					while (Equal(manager.x_err_right, manager.x_err_compare, manager.threshold) && Equal(manager.x_err_left, manager.x_err_compare, manager.threshold) && action == 2)
 	        		{	
-			        	manager.InitialPosition();
-			    		//manager.Publish();
+			        	manager.ToGlass();
 			    		manager.x_err_right.p(0) = 1;
 			    		action = 3;
 			    		ROS_INFO("Now it's time to pouring!!! ");
+
+			    		ros::Duration(1).sleep();
 			        }
 					break;
 
 				case(3):
 					ROS_INFO("THIRD action");
-					//manager.InitialPosition();
-					//manager.Publish();
-					while (Equal(manager.x_err_right, manager.x_err_compare, 0.05) && Equal(manager.x_err_left, manager.x_err_compare, 0.05) && action == 3)
+					while (Equal(manager.x_err_right, manager.x_err_compare, manager.threshold) && Equal(manager.x_err_left, manager.x_err_compare, manager.threshold) && action == 3)
 	        		{	
-			        	//manager.InitialPosition();
-			    		//manager.Publish();
+			        	manager.InitialPosition();
 			    		manager.x_err_right.p(0) = 1;
 			    		action = 4;
+			    		ROS_INFO("Now it's time to pouring!!! ");
+
+			    		closure_value[0] = 0;
+						closure_value[1] = 0;
+			    		manager.Grasping(closure_value, s_l);
+	        			manager.Grasping(closure_value, s_r);
+
+	        			ros::Duration(2).sleep();
+			        }
+					break;
+
+				case(4):
+					ROS_INFO("FOURTH action");
+					while (Equal(manager.x_err_right, manager.x_err_compare, manager.threshold) && Equal(manager.x_err_left, manager.x_err_compare, manager.threshold) && action == 4)
+	        		{	
+			    		manager.x_err_right.p(0) = 1;
+			    		action = 5;
 			    		ROS_INFO("Good job guy, you've done!!!");
+
+	        			ros::Duration(1).sleep();
 			        }
 					break;
 

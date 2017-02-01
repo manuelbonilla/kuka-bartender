@@ -3,7 +3,7 @@
     <!-- LAUNCH INTERFACE -->
     <arg name="gui" default="false" />
     <arg name="robot_name" default="bartender"/>
-    <arg name="use_rviz" default="false"/>
+    <arg name="use_rviz" default="true"/>
     <arg name="use_joint_state_publisher" default="true"/>
     <arg name="use_calibration_package" default="false"/>	<!-- disabled: simulation is not compromised -->
     <arg name="use_grasp_estimator" default="true"/>		
@@ -26,7 +26,7 @@
     <!-- the selection is only due to the hand visualization which is different in real and simulation -->
     <!-- UNLESS is opposite of IF command: it does the action if the arg is FALSE. So two following commands are one the opposite of the other-->
     <group if="$(arg use_robot_sim)">
-        <param name="robot_description" command="$(find xacro)/xacro.py $(find bartender_description)/robot/$(arg robot_name).urdf.xacro use_mimic_tag:=false"/>
+        <param name="robot_description" command="$(find xacro)/xacro.py $(find bartender_description)/robot/$(arg robot_name).urdf.xacro use_mimic_tag:=true"/>
     </group>
     
     <group unless="$(arg use_robot_sim)">
@@ -66,7 +66,7 @@
             <arg name="paused" value="false"/>
             <!-- when using the real/sim scenario in parallel, set "use_enabled_time" to false -->
             <arg name="use_sim_time" value="true"/>
-            <arg name="gui" value="true"/>
+            <arg name="gui" value="false"/>
             <arg name="headless" value="true"/>
             <arg name="debug" value="false"/>
         </include>
@@ -107,7 +107,7 @@
     
 <!-- LEFT HAND -->
     
-<!--     <group ns="left_hand">
+<group ns="left_hand">
         <group if="$(arg left_hand_enabled)">
             <param name="robot_description" command="$(find xacro)/xacro.py $(find bartender_description)/robot/$(arg robot_name).urdf.xacro use_mimic_tag:=true"/>
 
@@ -117,7 +117,16 @@
                 <arg name="use_deafult_joint_names" value="false"/>
                 <arg name="hand_id" value="1"/>
             </include>
-    </group>  -->
+    </group> 
+
+    <!-- load the controllers in current namespace -->
+        <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen"  args="joint_state_controller joint_trajectory_controller"/>
+       <!--  <group if="$(arg use_grasp_estimator)">
+            <rosparam command="load" file="$(find grasp_state_publisher)/config/softgrasp.yaml" />
+            <node name="grasp_state_publisher" pkg="grasp_state_publisher" type="grasp_state_publisher" respawn="false" output="screen" />
+        </group> -->
+</group>
+
 
 <!-- RIGHT ARM -->
     
@@ -140,7 +149,7 @@
 
 <!-- RIGHT HAND -->
     
-<!--     <group ns="right_hand">
+     <group ns="right_hand">
         <group if="$(arg right_hand_enabled)">
             <param name="robot_description" command="$(find xacro)/xacro.py $(find bartender_description)/robot/$(arg robot_name).urdf.xacro use_mimic_tag:=true"/>
 
@@ -151,7 +160,14 @@
                 <arg name="hand_id" value="2"/>
             </include>
         </group>
+        <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen"  args="joint_state_controller joint_trajectory_controller"/>
 
-    </group> -->
+        <!-- grasp estimator -->
+        <!-- <group if="$(arg use_grasp_estimator)">
+            <rosparam command="load" file="$(find grasp_state_publisher)/config/softgrasp.yaml" />
+            <node name="grasp_state_publisher" pkg="grasp_state_publisher" type="grasp_state_publisher" respawn="false" output="screen" />
+        </group> -->
+
+    </group>
 
 </launch>

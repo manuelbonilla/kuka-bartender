@@ -5,6 +5,7 @@
 
 #include <visualization_msgs/Marker.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <sensor_msgs/JointState.h>
 
 #include <bartender_control/bartender_msg.h> 
 
@@ -40,7 +41,7 @@ namespace bartender_control
 
 		ros::Subscriber sub_bartender_cmd;
 
-		ros::Publisher pub_check_error;
+		ros::Publisher pub_check_error, pub_check_error_gravity;
 		ros::Publisher pub_check_initial;
 
 		KDL::Frame x_;		//current pose
@@ -55,6 +56,9 @@ namespace bartender_control
 
 		Eigen::MatrixXd J_pinv_;	//Pseudoinverse jacobian of dynamic dimension (double)
 		Eigen::Matrix<double,3,3> skew_;	//skew-matrix (3x3) of double
+		Eigen::Matrix<double, 7, 7> P_null;	// Null-space projector
+
+        Eigen::Matrix<double, 7, 1> q_null;
 
 		struct quaternion_
 		{
@@ -62,27 +66,21 @@ namespace bartender_control
 			double a;
 		} quat_curr_, quat_des_;
 
-		struct parameters
-		{
-			double gain_null_space;
-			/*std::vector<std::string> pf_list_of_links;
-			std::vector<KDL::Chain> pf_list_of_chains;
-			std::vector<KDL::ChainFkSolverPos_recursive> pf_list_of_fk;
-			std::vector<KDL::ChainJntToJacSolver> pf_list_of_jac;*/
-			bool enable_null_space;
-			int id_arm;
-		} parameters_;
-
 		double Roll_x_init, Pitch_x_init, Yaw_x_init;
 
 		KDL::Vector v_temp_;
+		//KDL::JntArray G_local;
 
 		int cmd_flag_;
+		bool second_task;
+
+		double alpha1, alpha2;
 		
 		boost::scoped_ptr<KDL::ChainJntToJacSolver> jnt_to_jac_solver_;		// Class to calculate the jacobian of a general KDL::Chain, it is used by other solvers. It should not be used outside of KDL.
 		boost::scoped_ptr<KDL::ChainFkSolverPos_recursive> fk_pos_solver_;	// Implementation of a recursive forward position kinematics algorithm to calculate the position transformation from joint space to Cartesian space of a general kinematic chain (KDL::Chain)
 		boost::scoped_ptr<KDL::ChainIkSolverVel_pinv> ik_vel_solver_;		// Implementation of a inverse velocity kinematics algorithm based on the generalize pseudo inverse to calculate the velocity transformation from Cartesian to joint space of a general KDL::Chain. It uses a svd-calculation based on householders rotations
 		boost::scoped_ptr<KDL::ChainIkSolverPos_NR_JL> ik_pos_solver_;		// Implementation of a general inverse position kinematics algorithm based on Newton-Raphson iterations to calculate the position transformation from Cartesian to joint space of a general KDL::Chain. Takes joint limits into account.
+		boost::scoped_ptr<KDL::ChainDynParam> id_solver_;					// Implementation of inverse dynamic resolver (to calculate Gravity matrix)
 	};
 
 }

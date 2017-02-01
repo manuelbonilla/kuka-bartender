@@ -38,7 +38,8 @@ class BartenderManager {
 		void DrinkSelection();
 		void Publish();
 		void Init();
-		void Grasping();
+		void Grasping(std::vector<int> closure_value, std::string s);
+		void ToGlass();
 		void Pouring();
 		void InitialPosition();
 
@@ -57,12 +58,19 @@ class BartenderManager {
 		KDL::Frame x_right_initial;
 		KDL::Frame x_left_initial;
 		
-	private:
 		ros::NodeHandle n_;
+
+		double threshold;
+
+		float roll_b, pitch_b, yaw_b;
+
+	private:
 
 		ros::Publisher pub_bartender_cmd_right;
 		ros::Publisher pub_bartender_cmd_left;
 
+		ros::Publisher joint_pub;
+		
 		ros::Subscriber sub_bartender_err_right;
 		ros::Subscriber sub_bartender_err_left;
 

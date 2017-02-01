@@ -70,9 +70,9 @@
   </xacro:kuka_lwr>
 
   <!-- LEFT SOFTHAND -->
-  <!-- <xacro:soft_hand parent="left_arm_7_link" name="left_hand" left="true" withAdaptiveTransmission="true" useMimicTag="true">
+  <xacro:soft_hand parent="left_arm_7_link" name="left_hand" left="true" withAdaptiveTransmission="true" useMimicTag="true">
     <origin xyz="0 0 0" rpy="0 0 0"/>
-  </xacro:soft_hand > -->
+  </xacro:soft_hand >
 
   <!-- RIGHT ARM -->
   <xacro:kuka_lwr name="right_arm" parent="bartender_anchor">
@@ -80,9 +80,9 @@
   </xacro:kuka_lwr>
 
   <!-- RIGHT SOFTHAND -->
-  <!-- <xacro:soft_hand parent="right_arm_7_link" name="right_hand" left="false" withAdaptiveTransmission="true" useMimicTag="true">
+  <xacro:soft_hand parent="right_arm_7_link" name="right_hand" left="false" withAdaptiveTransmission="true" useMimicTag="true">
     <origin xyz="0 0 0" rpy="0 0 0"/>
-  </xacro:soft_hand > -->
+  </xacro:soft_hand >
 
 
 </robot>
