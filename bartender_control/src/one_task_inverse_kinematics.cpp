@@ -95,9 +95,16 @@ namespace bartender_control
             joint_msr_states_.qdot(i) = joint_handles_[i].getVelocity();            
         }
 
+        //**********************************************************************************************************************//
+        //  In this section you can find the MultyTask Kinematic control. The first task (alpha1) is the position control of    //
+        //  the kuka-bartender to the desired position (x_des_) using the inverse kinematic control q = alpha1*pinv(J)*x_err_.  //
+        //  The second task is the maximization of the potential energy of every link q = alpha2*(I-pinv(J)*J)*G, where G is    //
+        //  the Gravity matrix used in the dynamic joint space model (G is a 7x1 array).                                        //
+        //**********************************************************************************************************************//
+
         if (cmd_flag_)
         {
-            if (Equal(x_, x_des_, 0.3)) nh_.param<double>("alpha1", alpha1, 20);
+            if (Equal(x_, x_des_, 0.3)) nh_.param<double>("alpha1", alpha1, 20);    //  Reinforce position task
           
             // computing Jacobian
             jnt_to_jac_solver_->JntToJac(joint_msr_states_.q, J_);
@@ -184,6 +191,12 @@ namespace bartender_control
         else
         {
             cmd_flag_ = 0;
+
+            for(int i=0; i < joint_handles_.size(); i++)
+            {
+                joint_msr_states_.q(i) = 0;
+            }
+
 
             fk_pos_solver_->JntToCart(joint_msr_states_.q, x_initial);
             x_initial.M.GetRPY(Roll_x_init, Pitch_x_init, Yaw_x_init);
