@@ -194,5 +194,5 @@ include_directories(
 
 include_directories(include ${catkin_INCLUDE_DIRS} ${GAZEBO_INCLUDE_DIRS})
 
-add_executable(bartender_manager src/bartender_manager.cpp)
+add_executable(bartender_manager src/main.cpp src/bartender_manager.cpp)
 target_link_libraries(bartender_manager ${catkin_LIBRARIES})
