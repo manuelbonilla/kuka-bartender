@@ -88,8 +88,8 @@ void BartenderManager::checkCallback_left_initial(const std_msgs::Float64MultiAr
 //This function initializes the bottle map (string,frame)
 void BartenderManager::Init ()
 {
-	x_bottle.p(0) = -0.8;
-	x_bottle.p(1) = 0.3;
+	x_bottle.p(0) = -0.85;
+	x_bottle.p(1) = 0.2;
 	x_bottle.p(2) = 0.15;
 
 	roll_bottle = roll_b;
@@ -105,8 +105,14 @@ void BartenderManager::Init ()
 	x_bottle.p(1) = 0;
 	bottle["gin"] = x_bottle;
 
-	x_bottle.p(1) = -0.3;
+	x_bottle.p(1) = -0.2;
 	bottle["lemon"] = x_bottle;
+
+	x_bottle.p(1) = 0.4;
+	bottle["rum"] = x_bottle;
+
+	x_bottle.p(1) = -0.4;
+	bottle["coca"] = x_bottle;
 
 	x_bottle.p(0) = -0.6;
 	x_bottle.p(1) = 0;
@@ -115,6 +121,11 @@ void BartenderManager::Init ()
 
 }
 
+/*void BartenderManager::Distance(KDL::Frame pos, KDL::Frame ref)
+{
+	d2 = (pos(0)*pos(0) + pos(1)*pos(1) + pos(2)*pos(2)) + (ref(0)*ref(0) + ref(1)*ref(1) + ref(2)*ref(2));
+	d = sqrt(d2);
+}*/ 
 //Function who transforms Euler agles (RPY) in quaternion
 double *BartenderManager::EulerToQuaternion(float R, float P, float Y)
 {
@@ -141,10 +152,10 @@ void BartenderManager::DrinkSelection ()
 {	
 	string choise1, choise2;
 
-  	cout << "Please, enter the first bottle (vodka, gin, lemon): " << endl;
+  	cout << "Please, enter the first bottle (rum, vodka, gin, lemon, coca): " << endl;
   	getline (cin, choise1);
 
-  	cout << "Please, enter the second bottle (vodka, gin, lemon): " << endl;
+  	cout << "Please, enter the second bottle (rum, vodka, gin, lemon, coca): " << endl;
   	getline (cin, choise2);
 
   	cout << "You have chosen " << choise1 << " and " << choise2 << endl;
@@ -180,6 +191,9 @@ void BartenderManager::DrinkSelection ()
 		    msg_left.arrived = false;
   		}
   	}
+  	ros::spinOnce();
+
+
 
 }
 

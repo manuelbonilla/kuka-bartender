@@ -18,14 +18,107 @@ int main(int argc, char **argv)
 
 	manager.Init();
 
-	//manager.DrinkSelection();
+	int action = 1;
 
+	bool finished = false;
+	
 	while (ros::ok())
 	{
-		int action = 1;
+		
+
+		// manager.Init();
+
 		manager.DrinkSelection();
 
-		while (action != 4)
+		while (!finished)
+		{
+			manager.n_.param<double>("threshold", manager.threshold, 0.15);
+
+			manager.n_.param<float>("roll", manager.roll_b, 0);
+		    manager.n_.param<float>("pitch", manager.pitch_b, -90);
+		    manager.n_.param<float>("yaw", manager.yaw_b, 0);
+
+		    // manager.Publish();
+
+		    //	First action: approach to the bottles
+		    // ros::spinOnce();
+			
+		    while (!Equal(manager.x_err_right, manager.x_err_compare, manager.threshold) && !Equal(manager.x_err_left, manager.x_err_compare, manager.threshold) && action == 1)
+			{
+				ROS_INFO("FIRST action");
+
+				if (Equal(manager.x_err_right, manager.x_err_compare, manager.threshold) && Equal(manager.x_err_left, manager.x_err_compare, manager.threshold)) 
+					{
+						action = 2;
+
+						ROS_INFO("FIRST action FINISHED");
+
+						manager.Grasping(closure_value, s_l);
+	        			manager.Grasping(closure_value, s_r);
+
+	        			ros::Duration(5).sleep();
+
+	        			manager.ToGlass();
+					}
+
+				manager.Publish();
+			
+			}
+
+			//	Second action: approach to the glass
+			// ros::spinOnce();
+
+		    while (!Equal(manager.x_err_right, manager.x_err_compare, manager.threshold) && !Equal(manager.x_err_left, manager.x_err_compare, manager.threshold) && action == 2)
+			{
+				ROS_INFO("SECOND action");
+
+				if (Equal(manager.x_err_right, manager.x_err_compare, manager.threshold) && Equal(manager.x_err_left, manager.x_err_compare, manager.threshold)) 
+					{
+						action = 3;
+
+						ROS_INFO("SECOND action FINISHED");
+
+	        			ros::Duration(5).sleep();
+
+	        			manager.InitialPosition();
+					}
+
+				manager.Publish();
+			
+			}
+
+			//	Third action: Return to the initial position
+			// ros::spinOnce();
+			
+		    while (!Equal(manager.x_err_right, manager.x_err_compare, manager.threshold) && !Equal(manager.x_err_left, manager.x_err_compare, manager.threshold) && action == 3)
+			{
+				ROS_INFO("THIRD action");
+
+				if (Equal(manager.x_err_right, manager.x_err_compare, manager.threshold) && Equal(manager.x_err_left, manager.x_err_compare, manager.threshold)) 
+					{
+						action = 4;
+
+						ROS_INFO("THIRD action FINISHED");
+
+						closure_value[0] = 0;
+						closure_value[1] = 0;
+
+						manager.Grasping(closure_value, s_l);
+	        			manager.Grasping(closure_value, s_r);
+
+	        			ros::Duration(5).sleep();
+
+					}
+
+				manager.Publish();
+
+				finished = true;
+			
+			}
+
+			// manager.Publish();
+		}
+		/*while (action != 4)
 		{	
 			manager.n_.param<double>("threshold", manager.threshold, 0.15);
 
@@ -40,19 +133,25 @@ int main(int argc, char **argv)
 
 				case(1):
 					ROS_INFO("FIRST action");
-					while (Equal(manager.x_err_right, manager.x_err_compare, manager.threshold) && Equal(manager.x_err_left, manager.x_err_compare, manager.threshold) && action == 1)
+					while (Equal(manager.x_err_right.p, manager.x_err_compare.p, manager.threshold) && Equal(manager.x_err_left.p, manager.x_err_compare.p, manager.threshold) && action == 1)
 	        		{	
-	        			manager.Grasping(closure_value, s_l);
-	        			manager.Grasping(closure_value, s_r);
+	        			manager.n_.param<float>("yaw", manager.yaw_b, 90);
+	        			manager.Init();
 
-	        			ros::Duration(5).sleep();
+	        			while (Equal(manager.x_err_right.M, manager.x_err_compare.M, manager.threshold) && Equal(manager.x_err_left.M, manager.x_err_compare.M, manager.threshold) && action == 1)
+	        			{	
+	        				manager.Grasping(closure_value, s_l);
+	        				manager.Grasping(closure_value, s_r);
 
-			    		manager.x_err_right.p(0) = 1;
-			    		action = 2;
-			    		ROS_INFO("Both arm on targets, no i'm going to grasping and pouring in the glass");
+	        				ros::Duration(5).sleep();
+
+	        			
+			    		//manager.x_err_right.p(0) = 1;
+			    			action = 4;
+			    			ROS_INFO("Both arm on targets, no i'm going to grasping and pouring in the glass");
 		
-
-	        			manager.ToGlass();			
+			    		}
+	        			//manager.ToGlass();			
 			        }
 					break;
 
@@ -93,9 +192,9 @@ int main(int argc, char **argv)
 
 		manager.Publish();
 		
-		}
+		}*/
 	 
-	 }
+	}
 		
 	
 	return 0;

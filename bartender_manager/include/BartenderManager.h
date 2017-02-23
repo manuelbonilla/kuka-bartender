@@ -42,6 +42,7 @@ class BartenderManager {
 		void ToGlass();
 		void Pouring();
 		void InitialPosition();
+		void Distance(KDL::Frame pos, KDL::Frame ref);
 
 		bool BottleGrasping = false;
 		bool ActionPouring = false;

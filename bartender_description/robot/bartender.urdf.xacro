@@ -45,13 +45,23 @@
   </xacro:model_bottle>
   
   <xacro:model_bottle name="bottle_B" parent="bartender_anchor">
-    <origin xyz="-1.0 0.3 0.22" rpy="0 0 0"/>
+    <origin xyz="-1.0 0.2 0.22" rpy="0 0 0"/>
     <material name="Vito/LightGrey"/>
   </xacro:model_bottle>
   
   <xacro:model_bottle name="bottle_O" parent="bartender_anchor">
-    <origin xyz="-1.0 -0.3 0.22" rpy="0 0 0"/>
+    <origin xyz="-1.0 -0.2 0.22" rpy="0 0 0"/>
     <material name="Vito/Orange"/>
+  </xacro:model_bottle>
+
+  <xacro:model_bottle name="bottle_G" parent="bartender_anchor">      
+    <origin xyz="-1.0 0.4 0.22" rpy="0 0 0"/>
+    <material name="Vito/Green"/>
+  </xacro:model_bottle>
+
+  <xacro:model_bottle name="bottle_Y" parent="bartender_anchor">      
+    <origin xyz="-1.0 -0.4 0.22" rpy="0 0 0"/>
+    <material name="Vito/Yellow"/>
   </xacro:model_bottle>
   
   <!-- GLASS -->

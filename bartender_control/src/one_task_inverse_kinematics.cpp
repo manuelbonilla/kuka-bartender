@@ -80,6 +80,36 @@ namespace bartender_control
 
     }
 
+    void OneTaskInverseKinematics::param_update()
+    {
+        // computing Jacobian
+        jnt_to_jac_solver_->JntToJac(joint_msr_states_.q, J_);
+
+        // computing J_pinv_
+        pseudo_inverse(J_.data, J_pinv_);
+
+        // computing forward kinematics
+        fk_pos_solver_->JntToCart(joint_msr_states_.q, x_);
+
+        // end-effector position error
+        x_err_.vel = x_des_.p - x_.p;
+
+        // getting quaternion from rotation matrix
+        x_.M.GetQuaternion(quat_curr_.v(0),quat_curr_.v(1),quat_curr_.v(2),quat_curr_.a);   //.M is referref to the rotation of x_. The function GetQuaternion obtains quaternion from the rotation matrix
+        x_des_.M.GetQuaternion(quat_des_.v(0),quat_des_.v(1),quat_des_.v(2),quat_des_.a);
+
+        skew_symmetric(quat_des_.v, skew_); // Gets skew-matrix from the quaternion of desired frame
+
+        for (int i = 0; i < skew_.rows(); i++)
+            {
+                v_temp_(i) = 0.0;                               //Initializiation of the i_element of vector v_temp
+                for (int k = 0; k < skew_.cols(); k++)      
+                    v_temp_(i) += skew_(i,k)*(quat_curr_.v(k)); //Sobstitution of the the i_element of vector v_temp with the product between skew_matrix and quaternion
+            }
+
+        // end-effector orientation error
+        x_err_.rot = quat_curr_.a*quat_des_.v - quat_des_.a*quat_curr_.v - v_temp_;
+    }
     void OneTaskInverseKinematics::update(const ros::Time& time, const ros::Duration& period)
     {
 
@@ -95,6 +125,8 @@ namespace bartender_control
             joint_msr_states_.qdot(i) = joint_handles_[i].getVelocity();            
         }
 
+        bartender_control::OneTaskInverseKinematics::param_update();    //  Calculation of parameters used by controller
+
         //**********************************************************************************************************************//
         //  In this section you can find the MultyTask Kinematic control. The first task (alpha1) is the position control of    //
         //  the kuka-bartender to the desired position (x_des_) using the inverse kinematic control q = alpha1*pinv(J)*x_err_.  //
@@ -104,36 +136,10 @@ namespace bartender_control
 
         if (cmd_flag_)
         {
+
             if (Equal(x_, x_des_, 0.3)) nh_.param<double>("alpha1", alpha1, 20);    //  Reinforce position task
-          
-            // computing Jacobian
-            jnt_to_jac_solver_->JntToJac(joint_msr_states_.q, J_);
 
-            // computing J_pinv_
-            pseudo_inverse(J_.data, J_pinv_);
-
-            // computing forward kinematics
-            fk_pos_solver_->JntToCart(joint_msr_states_.q, x_);
-
-            // end-effector position error
-            x_err_.vel = x_des_.p - x_.p;
-
-            // getting quaternion from rotation matrix
-            x_.M.GetQuaternion(quat_curr_.v(0),quat_curr_.v(1),quat_curr_.v(2),quat_curr_.a);	//.M is referref to the rotation of x_. The function GetQuaternion obtains quaternion from the rotation matrix
-            x_des_.M.GetQuaternion(quat_des_.v(0),quat_des_.v(1),quat_des_.v(2),quat_des_.a);
-
-            skew_symmetric(quat_des_.v, skew_);	// Gets skew-matrix from the quaternion of desired frame
-
-            for (int i = 0; i < skew_.rows(); i++)
-            {
-                v_temp_(i) = 0.0;								//Initializiation of the i_element of vector v_temp
-                for (int k = 0; k < skew_.cols(); k++)		
-                    v_temp_(i) += skew_(i,k)*(quat_curr_.v(k));	//Sobstitution of the the i_element of vector v_temp with the product between skew_matrix and quaternion
-            }
-
-            // end-effector orientation error
-            x_err_.rot = quat_curr_.a*quat_des_.v - quat_des_.a*quat_curr_.v - v_temp_;
-
+            //**********************************FIRST TASK***********************************************************************
             // computing q_dot
             for (int i = 0; i < J_pinv_.rows(); i++)
             {
@@ -143,7 +149,7 @@ namespace bartender_control
           
             }
 
-            //*******************************************************************************************************************
+            //**********************************SECOND TASK**********************************************************************
 
             if (second_task)
             {
@@ -211,7 +217,17 @@ namespace bartender_control
             msg_initial.data.push_back( Pitch_x_init );
             msg_initial.data.push_back( Yaw_x_init ); 
 
-            pub_check_initial.publish(msg_initial);   
+            pub_check_initial.publish(msg_initial); 
+
+            msg_error.data.push_back( x_err_.vel(0) );
+            msg_error.data.push_back( x_err_.vel(1) );
+            msg_error.data.push_back( x_err_.vel(2) );
+
+            msg_error.data.push_back( x_err_.rot(0) );
+            msg_error.data.push_back( x_err_.rot(1) );
+            msg_error.data.push_back( x_err_.rot(2) );    
+
+            pub_check_error.publish(msg_error);
 
         }
 

@@ -37,6 +37,7 @@ namespace bartender_control
 		void starting(const ros::Time& time);
 		void update(const ros::Time& time, const ros::Duration& period);
 		void command(const bartender_control::bartender_msg::ConstPtr &msg);
+		void param_update();
 		Eigen::Matrix<double, 7, 1> potentialEnergy(KDL::JntArray q);
 
 		ros::Subscriber sub_bartender_cmd;
