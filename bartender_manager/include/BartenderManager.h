@@ -39,10 +39,12 @@ class BartenderManager {
 		void Publish();
 		void Init();
 		void Grasping(std::vector<int> closure_value, std::string s);
+		void OpeningHand(std::vector<int> opening_value, std::string s);
 		void ToGlass();
 		void Pouring();
 		void InitialPosition();
-		void Distance(KDL::Frame pos, KDL::Frame ref);
+		float Mod_Error(KDL::Frame err);
+		bool compare_error_p(KDL::Frame err);
 
 		bool BottleGrasping = false;
 		bool ActionPouring = false;
@@ -61,9 +63,7 @@ class BartenderManager {
 		
 		ros::NodeHandle n_;
 
-		double threshold;
-
-		float roll_b, pitch_b, yaw_b;
+		double threshold = 0.1;
 
 	private:
 

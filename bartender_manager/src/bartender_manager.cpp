@@ -22,13 +22,16 @@ BartenderManager::BartenderManager()
     x_err_compare.p(2) = 0;
     x_err_compare = KDL::Frame(KDL::Rotation::Quaternion(1, 0, 0, 0), x_err_compare.p);
 
-    n_.param<double>("threshold", threshold, 0.15);
+    x_err_right.p(0) = 1;
+    x_err_right.p(1) = 1;
+    x_err_right.p(2) = 1;
+    x_err_right = KDL::Frame(KDL::Rotation::Quaternion(1, 1, 1, 1), x_err_right.p);
 
-
-	n_.param<float>("roll_b", roll_b, 0);
-    n_.param<float>("pitch_b", pitch_b, -90);
-    n_.param<float>("yaw_b", yaw_b, 0);
-    
+    x_err_left.p(0) = 1;
+    x_err_left.p(1) = 1;
+    x_err_left.p(2) = 1;
+    x_err_left = KDL::Frame(KDL::Rotation::Quaternion(1, 1, 1, 1), x_err_left.p);
+   
 }
 
 BartenderManager::~BartenderManager() {}
@@ -92,13 +95,15 @@ void BartenderManager::Init ()
 	x_bottle.p(1) = 0.2;
 	x_bottle.p(2) = 0.15;
 
-	roll_bottle = roll_b;
-	pitch_bottle = pitch_b;
-	yaw_bottle = yaw_b;
+	roll_bottle = -90;		// -90
+	pitch_bottle = 0;		// 0
+	yaw_bottle = 90;		// 90
 
+	//x_bottle.M = KDL::RotationGetEulerZYZ(roll_bottle, pitch_bottle, yaw_bottle);
 	q_bottle = BartenderManager::EulerToQuaternion(roll_bottle, pitch_bottle, yaw_bottle);
 
-	x_bottle = KDL::Frame(KDL::Rotation::Quaternion(q_bottle[0], q_bottle[1], q_bottle[2], q_bottle[3]), x_bottle.p);
+	x_bottle = KDL::Frame(KDL::Rotation::EulerZYZ(roll_bottle, pitch_bottle, yaw_bottle), x_bottle.p);
+	//x_bottle = KDL::Frame(KDL::Rotation::Quaternion(q_bottle[0], q_bottle[1], q_bottle[2], q_bottle[3]), x_bottle.p);
 
 	bottle["vodka"] = x_bottle;
 
@@ -121,11 +126,6 @@ void BartenderManager::Init ()
 
 }
 
-/*void BartenderManager::Distance(KDL::Frame pos, KDL::Frame ref)
-{
-	d2 = (pos(0)*pos(0) + pos(1)*pos(1) + pos(2)*pos(2)) + (ref(0)*ref(0) + ref(1)*ref(1) + ref(2)*ref(2));
-	d = sqrt(d2);
-}*/ 
 //Function who transforms Euler agles (RPY) in quaternion
 double *BartenderManager::EulerToQuaternion(float R, float P, float Y)
 {
@@ -193,13 +193,11 @@ void BartenderManager::DrinkSelection ()
   	}
   	ros::spinOnce();
 
-
-
 }
 
 void BartenderManager::Grasping(std::vector<int> closure_value, std::string s)
 {
-	ROS_INFO("Grasping funtion!!");
+	ROS_INFO("Grasping function!!");
 	sensor_msgs::JointState joint_state;
 
 	joint_state.header.stamp = ros::Time::now();	
@@ -221,17 +219,40 @@ void BartenderManager::Grasping(std::vector<int> closure_value, std::string s)
 
 }
 
+void BartenderManager::OpeningHand(std::vector<int> opening_value, std::string s)
+{
+	ROS_INFO("Opening Hand function!!");
+	sensor_msgs::JointState joint_state;
+
+	joint_state.header.stamp = ros::Time::now();	
+
+	if(s == "left")
+	{
+		joint_state.name.push_back("left_hand_synergy_joint");
+		joint_state.position.push_back(opening_value[0]);
+	}
+
+	if(s == "right")
+	{
+		joint_state.name.push_back("right_hand_synergy_joint");
+		joint_state.position.push_back(opening_value[1]);
+	}
+	
+ 	joint_pub.publish(joint_state);
+	ros::spinOnce();
+
+}
+
 void BartenderManager::ToGlass()
 {
 	msg_right.arrived = false;
+	msg_left.arrived = false;
+
 	msg_right.des_frame.position.x = -0.6;
 	msg_right.des_frame.position.y = 0.2;
-	msg_right.des_frame.position.z = 0.2;
 
-	msg_left.arrived = false;
 	msg_left.des_frame.position.x = -0.6;
 	msg_left.des_frame.position.y = -0.2;
-	msg_left.des_frame.position.z = 0.2;
 }
 
 void BartenderManager::Pouring()
@@ -241,6 +262,10 @@ void BartenderManager::Pouring()
 
 void BartenderManager::InitialPosition()
 {
+
+	msg_right.arrived = false;
+	msg_left.arrived = false;
+
 	msg_right.des_frame.position.x = x_right_initial.p(0);
 	msg_right.des_frame.position.y = x_right_initial.p(1);
 	msg_right.des_frame.position.z = x_right_initial.p(2);
@@ -270,3 +295,23 @@ void BartenderManager::Publish()
 	ros::spinOnce();
 }
 
+float BartenderManager::Mod_Error(KDL::Frame err)
+{
+	static float d;
+
+	float d2 = ( err.p(0)*err.p(0) ) + ( err.p(1)*err.p(1) ) + ( err.p(2)*err.p(2) );
+	d = sqrt(d2);
+
+	return d;
+}
+
+bool BartenderManager::compare_error_p(KDL::Frame err)
+{
+	static bool near_p;
+
+	if ( (err.p(0) < threshold) && (err.p(1) < threshold) && (err.p(2) < threshold) ) near_p = true;
+	else near_p = false;
+
+	return near_p;
+
+}

@@ -34,7 +34,6 @@ namespace bartender_control
 		~OneTaskInverseKinematics();
 
 		bool init(hardware_interface::PositionJointInterface *robot, ros::NodeHandle &n);
-		void starting(const ros::Time& time);
 		void update(const ros::Time& time, const ros::Duration& period);
 		void command(const bartender_control::bartender_msg::ConstPtr &msg);
 		void param_update();

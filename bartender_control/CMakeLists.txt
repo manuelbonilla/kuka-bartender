@@ -38,7 +38,7 @@ catkin_package(
 )
 
 add_library(${PROJECT_NAME}
-  src/one_task_inverse_kinematics.cpp
+  src/one_task_inverse_kinematics.cpp /home/andrea/catkin_ws/src/kuka-lwr/lwr_controllers/src/KinematicChainControllerBase.cpp
 )
 
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_gencpp)
@@ -55,5 +55,5 @@ install(TARGETS ${PROJECT_NAME}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
   )
 
-install(FILES bartender_conrol_plugins.xml
+install(FILES bartender_control_plugins.xml
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})

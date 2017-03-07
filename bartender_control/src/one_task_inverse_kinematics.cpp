@@ -46,7 +46,9 @@ namespace bartender_control
 
         // computing forward kinematics
         fk_pos_solver_->JntToCart(joint_msr_states_.q, x_);
-        fk_pos_solver_->JntToCart(joint_msr_states_.q, x_des_);
+        // initialization x_des_
+        x_des_.p = KDL::Vector(-1, 0, 1);
+        x_des_.M = KDL::Rotation::Quaternion(0, 0 , 0, -1);
 
 
         cmd_flag_ = 0;
@@ -63,25 +65,29 @@ namespace bartender_control
 
         sub_bartender_cmd = nh_.subscribe("command", 250, &OneTaskInverseKinematics::command, this);
 
+        x_err_.vel(0) = 1;
+        x_err_.vel(1) = 1;
+        x_err_.vel(2) = 1;
+
         return true;
     }
 
-    void OneTaskInverseKinematics::starting(const ros::Time& time)
-    {
-    }
-      
     void OneTaskInverseKinematics::command(const bartender_control::bartender_msg::ConstPtr &msg)
     {
 
         x_des_.p = KDL::Vector(msg->des_frame.position.x, msg->des_frame.position.y, msg->des_frame.position.z);
         x_des_.M = KDL::Rotation::Quaternion(msg->des_frame.orientation.x, msg->des_frame.orientation.y, msg->des_frame.orientation.z, msg->des_frame.orientation.w);
         
-        cmd_flag_ = 1;
+        if (!msg->arrived) cmd_flag_ = 1;
+        if (msg->arrived) cmd_flag_ = 0;
 
     }
 
+    //  Updating parameters for controller
     void OneTaskInverseKinematics::param_update()
     {
+        // ros::spinOnce();
+
         // computing Jacobian
         jnt_to_jac_solver_->JntToJac(joint_msr_states_.q, J_);
 
@@ -93,6 +99,10 @@ namespace bartender_control
 
         // end-effector position error
         x_err_.vel = x_des_.p - x_.p;
+
+        // std::cout << "X_err: " << x_err_.vel(0) << " -" << x_err_.vel(1) << " -" << x_err_.vel(2) << endl;
+        // std::cout << "X_des: " << x_des_.p(0) << " -" << x_des_.p(1) << " -" << x_des_.p(2) << endl;
+        // std::cout << "X_att: " << x_.p(0) << " -" <<  x_.p(1) << " -" <<  x_.p(2) << endl;
 
         // getting quaternion from rotation matrix
         x_.M.GetQuaternion(quat_curr_.v(0),quat_curr_.v(1),quat_curr_.v(2),quat_curr_.a);   //.M is referref to the rotation of x_. The function GetQuaternion obtains quaternion from the rotation matrix
@@ -110,14 +120,18 @@ namespace bartender_control
         // end-effector orientation error
         x_err_.rot = quat_curr_.a*quat_des_.v - quat_des_.a*quat_curr_.v - v_temp_;
     }
+
+    //  Controller function:: Multy Task Inverse Kinematics
     void OneTaskInverseKinematics::update(const ros::Time& time, const ros::Duration& period)
     {
-
-        nh_.param<double>("alpha1", alpha1, 15);
-        nh_.param<double>("alpha2", alpha2, 1);
+        if (second_task) nh_.param<double>("alpha1", alpha1, 4);
+        else nh_.param<double>("alpha1", alpha1, 1);
+        nh_.param<double>("alpha2", alpha2, 0.5);
 
         std_msgs::Float64MultiArray msg_error;
         std_msgs::Float64MultiArray msg_error_gravity;
+
+        std::cout << "cmd_flag_ = " << cmd_flag_ << std::endl;
 
         for(int i=0; i < joint_handles_.size(); i++)
         {
@@ -137,9 +151,23 @@ namespace bartender_control
         if (cmd_flag_)
         {
 
-            if (Equal(x_, x_des_, 0.3)) nh_.param<double>("alpha1", alpha1, 20);    //  Reinforce position task
+            //  Reinforce position task
+
+            if (Equal(x_, x_des_, 0.2)) nh_.param<double>("alpha1", alpha2, 0.4);    //  Reinforce position task
+            if (Equal(x_, x_des_, 0.15)) nh_.param<double>("alpha1", alpha2, 0.3);    //  Reinforce position task
+            if (Equal(x_, x_des_, 0.125)) 
+            {
+                nh_.param<double>("alpha1", alpha1, 5);    //  Reinforce position task
+                nh_.param<double>("alpha2", alpha2, 0.3);     //  Lower gravity task
+            }
+
+            // debug line
+            
+            /*std::cout << "ALPHA_1: " << alpha1 << endl;
+            std::cout << "ALPHA_2: " << alpha2 << endl;*/
 
             //**********************************FIRST TASK***********************************************************************
+            
             // computing q_dot
             for (int i = 0; i < J_pinv_.rows(); i++)
             {
@@ -217,17 +245,7 @@ namespace bartender_control
             msg_initial.data.push_back( Pitch_x_init );
             msg_initial.data.push_back( Yaw_x_init ); 
 
-            pub_check_initial.publish(msg_initial); 
-
-            msg_error.data.push_back( x_err_.vel(0) );
-            msg_error.data.push_back( x_err_.vel(1) );
-            msg_error.data.push_back( x_err_.vel(2) );
-
-            msg_error.data.push_back( x_err_.rot(0) );
-            msg_error.data.push_back( x_err_.rot(1) );
-            msg_error.data.push_back( x_err_.rot(2) );    
-
-            pub_check_error.publish(msg_error);
+            pub_check_initial.publish(msg_initial);
 
         }
 

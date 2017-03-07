@@ -3,7 +3,7 @@
     <!-- LAUNCH INTERFACE -->
     <arg name="gui" default="false" />
     <arg name="robot_name" default="bartender"/>
-    <arg name="use_rviz" default="true"/>
+    <arg name="use_rviz" default="false"/>
     <arg name="use_joint_state_publisher" default="true"/>
     <arg name="use_calibration_package" default="false"/>	<!-- disabled: simulation is not compromised -->
     <arg name="use_grasp_estimator" default="true"/>		
@@ -66,7 +66,7 @@
             <arg name="paused" value="false"/>
             <!-- when using the real/sim scenario in parallel, set "use_enabled_time" to false -->
             <arg name="use_sim_time" value="true"/>
-            <arg name="gui" value="false"/>
+            <arg name="gui" value="true"/>
             <arg name="headless" value="true"/>
             <arg name="debug" value="false"/>
         </include>
@@ -104,28 +104,6 @@
 
         <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen"  args="joint_state_controller bartender_control"/>
     </group>
-    
-<!-- LEFT HAND -->
-    
-<group ns="left_hand">
-        <group if="$(arg left_hand_enabled)">
-            <param name="robot_description" command="$(find xacro)/xacro.py $(find bartender_description)/robot/$(arg robot_name).urdf.xacro use_mimic_tag:=true"/>
-
-            <rosparam command="load" file="$(find bartender_description)/config/left_hand_names.yaml" />
-
-            <include file="$(find soft_hand_ros_control)/launch/soft_hand_hw.launch">
-                <arg name="use_deafult_joint_names" value="false"/>
-                <arg name="hand_id" value="1"/>
-            </include>
-    </group> 
-
-    <!-- load the controllers in current namespace -->
-        <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen"  args="joint_state_controller joint_trajectory_controller"/>
-       <!--  <group if="$(arg use_grasp_estimator)">
-            <rosparam command="load" file="$(find grasp_state_publisher)/config/softgrasp.yaml" />
-            <node name="grasp_state_publisher" pkg="grasp_state_publisher" type="grasp_state_publisher" respawn="false" output="screen" />
-        </group> -->
-</group>
 
 
 <!-- RIGHT ARM -->
@@ -156,18 +134,41 @@
             <rosparam command="load" file="$(find bartender_description)/config/right_hand_names.yaml" />
 
             <include file="$(find soft_hand_ros_control)/launch/soft_hand_hw.launch">
-                <arg name="use_deafult_joint_names" value="false"/>
+                <arg name="use_deafult_joint_names" value="true"/>
                 <arg name="hand_id" value="2"/>
             </include>
         </group>
         <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen"  args="joint_state_controller joint_trajectory_controller"/>
 
         <!-- grasp estimator -->
-        <!-- <group if="$(arg use_grasp_estimator)">
+        <group if="$(arg use_grasp_estimator)">
             <rosparam command="load" file="$(find grasp_state_publisher)/config/softgrasp.yaml" />
             <node name="grasp_state_publisher" pkg="grasp_state_publisher" type="grasp_state_publisher" respawn="false" output="screen" />
-        </group> -->
+        </group>
 
-    </group>
+    </group> 
+
+    <!-- LEFT HAND -->
+    
+<group ns="left_hand">
+        <group if="$(arg left_hand_enabled)">
+            <param name="robot_description" command="$(find xacro)/xacro.py $(find bartender_description)/robot/$(arg robot_name).urdf.xacro use_mimic_tag:=true"/>
+
+            <rosparam command="load" file="$(find bartender_description)/config/left_hand_names.yaml" />
+
+            <include file="$(find soft_hand_ros_control)/launch/soft_hand_hw.launch">
+                <arg name="use_deafult_joint_names" value="true"/>
+                <arg name="hand_id" value="1"/>
+            </include>
+    </group> 
+        <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen"  args="joint_state_controller joint_trajectory_controller"/>
+        
+         <!-- grasp estimator -->
+        <group if="$(arg use_grasp_estimator)">
+            <rosparam command="load" file="$(find grasp_state_publisher)/config/softgrasp.yaml" />
+            <node name="grasp_state_publisher" pkg="grasp_state_publisher" type="grasp_state_publisher" respawn="false" output="screen" />
+        </group>
+</group>
 
 </launch>
+
